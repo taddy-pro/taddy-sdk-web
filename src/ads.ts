@@ -1,14 +1,14 @@
-import { Taddy } from './taddy';
+import { TaddyWeb } from './taddy';
 import { Ad, InterstitialConfig } from './types';
 import { showInterstitial } from './components/interstitial';
 
 const defaultInterstitialConfig: Partial<InterstitialConfig> = {};
 
 export class Ads {
-  private taddy: Taddy;
+  private taddy: TaddyWeb;
   private ad: Ad | null = null;
 
-  constructor(taddy: Taddy) {
+  constructor(taddy: TaddyWeb) {
     this.taddy = taddy;
   }
 

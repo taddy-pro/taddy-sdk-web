@@ -6,7 +6,7 @@ const defaultConfig: Partial<TaddyConfig> = {
   apiUrl: 'https://t.tadly.pro/v1',
 };
 
-export class Taddy {
+export class TaddyWeb {
   private readonly pubId: string;
   private readonly config: TaddyConfig;
   private webApp: WebApp;
