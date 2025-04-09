@@ -1,18 +1,20 @@
 import { Ad, InterstitialConfig } from '../types';
 import { createRoot } from 'react-dom/client';
 import InterstitialImage from './interstitial-image';
+import InterstitialVideo from './interstitial-video';
 import './interstitial.scss';
 
-export const Interstitial = ({ ad, click, close }: { ad: Ad; click(): void; close(): void }) => {
+interface Props {
+  ad: Ad;
+  click(): void;
+  close(): void;
+}
+
+export const Interstitial = ({ ad, click, close }: Props) => {
   return (
     <div className="taddy__interstitial">
       {ad.image && <InterstitialImage ad={ad} click={click} close={close} />}
-      {ad.video && (
-        <div>
-          <p>Формат еще не поддерживается</p>
-          <button onClick={close}>Закрыть</button>
-        </div>
-      )}
+      {ad.video && <InterstitialVideo ad={ad} click={click} close={close} />}
     </div>
   );
 };
@@ -23,13 +25,16 @@ export const showInterstitial = (ad: Ad, config: InterstitialConfig): Promise<bo
     document.getElementsByTagName('body')[0].appendChild(div);
     const close = () => {
       div.remove();
-      config.onClosed();
+      if (config.onClosed) config.onClosed();
       resolve(true);
     };
     const click = () => {
-      window.Telegram.WebApp.openLink(ad.link);
-      // window.open(ad.link);
-      //close();
+      console.log('Click!');
+      window.Telegram.WebApp.openLink(ad.link, {
+        // @ts-ignore
+        try_browser: 'chrome',
+        try_instant_view: false,
+      });
     };
     createRoot(div).render(<Interstitial ad={ad} click={click} close={close} />);
   });

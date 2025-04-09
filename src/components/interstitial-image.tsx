@@ -1,5 +1,6 @@
 import { Ad } from '../types';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Close } from './icons';
 
 const InterstitialImage = ({ ad, click, close }: { ad: Ad; click(): void; close(): void }) => {
   const [time, setTime] = useState(15);
@@ -26,7 +27,7 @@ const InterstitialImage = ({ ad, click, close }: { ad: Ad; click(): void; close(
     <div className="taddy__interstitial__image">
       {time <= 5 && (
         <button className="taddy__interstitial__image__close" onClick={close}>
-          ×
+          <Close color={window.Telegram.WebApp.themeParams.bg_color} />
         </button>
       )}
       <div className="taddy__interstitial__image__spacer" />
@@ -46,7 +47,11 @@ const InterstitialImage = ({ ad, click, close }: { ad: Ad; click(): void; close(
       </button>
       <div className="taddy__interstitial__image__spacer" />
       <span className="taddy__interstitial__image__timer">00:{time < 10 ? `0${time}` : time}</span>
-      <a href="https://taddy.pro" target="_blank" className="taddy__interstitial__image__taddy">
+      <a
+        href="https://taddy.pro/?utm_source=interstitial"
+        target="_blank"
+        className="taddy__interstitial__image__taddy"
+      >
         @TaddyPro - ads in Telegram
       </a>
     </div>

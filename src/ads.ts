@@ -1,26 +1,32 @@
 import { TaddyWeb } from './taddy';
-import { Ad, InterstitialConfig } from './types';
+import { Ad, EFormat, InterstitialConfig } from './types';
 import { showInterstitial } from './components/interstitial';
+import { preloadResource } from './utils';
 
 const defaultInterstitialConfig: Partial<InterstitialConfig> = {};
 
 export class Ads {
   private taddy: TaddyWeb;
-  private ad: Ad | null = null;
+  private ads: Partial<Record<EFormat, Ad>> = {};
 
   constructor(taddy: TaddyWeb) {
     this.taddy = taddy;
   }
 
-  public preload = (): Promise<boolean> => {
+  public preload = (format: EFormat | string): Promise<boolean> => {
+    if (format === 'interstitial') format = EFormat.Interstitial;
     return new Promise((resolve, reject) => {
-      if (this.ad) return resolve(true);
+      if (this.ads[format as EFormat]) return resolve(true);
       this.taddy
-        .call<Ad | null>('/ads/get')
+        .call<Ad | null>('/ads/get', { format })
         .then((ad) => {
           if (ad) {
-            this.ad = ad;
-            resolve(true);
+            this.ads[format as EFormat] = ad;
+            const preload = [];
+            if (ad.icon) preload.push(preloadResource(ad.icon));
+            if (ad.image) preload.push(preloadResource(ad.image));
+            if (ad.video) preload.push(preloadResource(ad.video));
+            Promise.all(preload).then(() => resolve(true));
           } else {
             resolve(false);
           }
@@ -29,14 +35,18 @@ export class Ads {
     });
   };
 
-  public interstitial = (config: InterstitialConfig) => {
-    config = { ...config, ...defaultInterstitialConfig };
-    this.preload().then((ready) => {
-      if (!ready) return;
-      showInterstitial(this.ad!, config)
-        .finally(() => (this.ad = null))
-        .finally(this.preload);
-      setTimeout(() => this.sendImpression(this.ad!), 1000);
+  public interstitial = (config?: InterstitialConfig): Promise<boolean> => {
+    return new Promise((resolve) => {
+      this.preload(EFormat.Interstitial)
+        .then((ready) => {
+          if (!ready) return resolve(false);
+          showInterstitial(this.ads[EFormat.Interstitial]!, { ...config, ...defaultInterstitialConfig }).finally(() => {
+            delete this.ads[EFormat.Interstitial];
+            resolve(true);
+          });
+          setTimeout(() => this.sendImpression(this.ads[EFormat.Interstitial]!), 1000);
+        })
+        .catch(() => resolve(false));
     });
   };
 

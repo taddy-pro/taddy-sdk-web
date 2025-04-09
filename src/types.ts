@@ -1,8 +1,8 @@
-export type TEvent = 'dom-ready' | 'ready' | TCustomEvent | string;
+export type TEvent = 'dom-ready' | 'ready' | CustomEvent | string;
 
-export type TCustomEvent = 'custom1' | 'custom2' | 'custom3' | 'custom4';
+export type CustomEvent = 'custom1' | 'custom2' | 'custom3' | 'custom4';
 
-export type TIdentifier = number | string;
+export type Identifier = number | string;
 
 export type THeaders = Record<string, string>;
 
@@ -14,16 +14,18 @@ export type TResponse = {
   code?: number;
 };
 
-export interface ITask {
-  id: TIdentifier;
+export interface FeedItem {
+  id: Identifier;
   title: string;
   description: string;
   image: string;
+  type: 'bot' | 'app';
   link: string;
 }
 
-export interface IGetTasksOptions {
+export interface ExchangeFeedOptions {
   limit?: number;
+  imageFormat?: 'png' | 'jpg' | 'webp';
   autoImpressions?: boolean;
 }
 
@@ -32,7 +34,7 @@ export interface TaddyConfig {
   debug?: boolean;
 }
 
-export interface TelegramUserDto {
+export interface TelegramUser {
   id: number | null;
   firstName?: string | null;
   lastName?: string | null;
@@ -57,5 +59,11 @@ export interface Ad {
 }
 
 export interface InterstitialConfig {
-  onClosed(): void;
+  onClosed?(): void;
+}
+
+export enum EFormat {
+  BotMessage = 'bot-ad',
+  Task = 'app-task',
+  Interstitial = 'app-interstitial',
 }

@@ -1,5 +1,6 @@
-import { TaddyConfig, TelegramUserDto, THeaders, THttpMethod, TResponse } from './types';
+import { TaddyConfig, TelegramUser, THeaders, THttpMethod, TResponse } from './types';
 import { Ads } from './ads';
+import { Exchange } from './exchange';
 
 const defaultConfig: Partial<TaddyConfig> = {
   debug: false,
@@ -7,14 +8,15 @@ const defaultConfig: Partial<TaddyConfig> = {
 };
 
 export class TaddyWeb {
-  private readonly pubId: string;
-  private readonly config: TaddyConfig;
+  public readonly pubId: string;
+  public readonly config: TaddyConfig;
+  public isReady: boolean = false;
+
   private webApp: WebApp;
   private initData: WebApp['initDataUnsafe'];
   private readonly user: WebApp['initDataUnsafe']['user'];
-  private isReady: boolean = false;
-
   private _ads?: Ads;
+  private _exchange?: Exchange;
 
   constructor(pubId: string, config?: TaddyConfig) {
     if (!window.Telegram || !window.Telegram.WebApp) throw new Error('Taddy: Telegram WebApp script is not loaded');
@@ -26,7 +28,7 @@ export class TaddyWeb {
     // document.addEventListener('DOMContentLoaded', () => this.logEvent('dom-ready'), { once: true });
   }
 
-  private getUserDto(): TelegramUserDto {
+  private getUser(): TelegramUser {
     return {
       id: this.user?.id!,
       username: this.user?.username,
@@ -51,82 +53,23 @@ export class TaddyWeb {
     return this._ads ?? (this._ads = new Ads(this));
   }
 
-  //
-  // private logEvent(event: TEvent, payload: Record<string, any> = {}) {
-  //   payload = { ...payload, event, pubId: this.pubId };
-  //   if (this.config.debug) console.info(`Taddy: Sending "${event}" event`, payload);
-  //   this.request('POST', '/events', payload).catch((e) => this.config.debug && console.warn('Taddy:', e));
-  // }
-  //
-  // customEvent(event: TCustomEvent, options?: { value?: number | null; currency?: string; once?: boolean }) {
-  //   if (this.config.debug) console.info(`Taddy: Sending "${event}" event`, options);
-  //   this.request('POST', '/events/custom', {
-  //     pubId: this.pubId,
-  //     user: this.user!.id,
-  //     event,
-  //     value: options?.value,
-  //     currency: options?.currency,
-  //     once: options?.once,
-  //   }).catch((e) => this.config.debug && console.warn('Taddy:', e));
-  // }
-  //
-  // ready(): void {
-  //   if (!this.isReady) {
-  //     this.logEvent('ready', { user: this.user, start: this.initData.start_param });
-  //     this.isReady = true;
-  //     return;
-  //   }
-  //   console.warn('Taddy: ready() already called');
-  // }
-  //
-  // tasks = (options?: IGetTasksOptions) => {
-  //   if (!this.isReady) throw new Error('Taddy: ready() not called');
-  //   return this.request<ITask[]>('POST', '/exchange/feed', {
-  //     pubId: this.pubId,
-  //     user: this.user,
-  //     start: this.initData.start_param,
-  //     origin: 'web',
-  //     ...options,
-  //   });
-  // };
-  //
-  // impressions(tasks: ITask[]): void {
-  //   this.logEvent('impressions', { ids: tasks.map((t) => t.id), user: this.user });
-  // }
-  //
-  // open(task: ITask): Promise<void> {
-  //   return new Promise((resolve, reject) => {
-  //     this.request<string>('POST', task.link)
-  //       .then((link) => {
-  //         window.Telegram.WebApp.openTelegramLink(link);
-  //         let counter = 0;
-  //         const check = () => {
-  //           this.request<boolean>('POST', '/exchange/check', { exchangeId: task.id, userId: this.user!.id }).then(
-  //             (completed) => {
-  //               if (completed) resolve();
-  //               else if (++counter < 100) setTimeout(check, 1000);
-  //               else reject('Check timed out');
-  //             },
-  //           );
-  //         };
-  //         setTimeout(check, 1000);
-  //       })
-  //       .catch(reject);
-  //   });
-  // }
+  public exchange(): Exchange {
+    return this._exchange ?? (this._exchange = new Exchange(this));
+  }
 
   public call = <T>(endpoint: string, payload: object = {}) => {
-    return this.request('POST', endpoint, {
+    const url = `${this.config.apiUrl}${endpoint}`;
+    return this.request('POST', url, {
       pubId: this.pubId,
-      user: this.getUserDto(),
+      user: this.getUser(),
       origin: 'web',
       ...payload,
     }) as Promise<T>;
   };
 
-  private request = <T>(
+  public request = <T>(
     method: THttpMethod,
-    endpoint: string,
+    url: string,
     payload: object | FormData = {},
     fields: string[] = [],
   ): Promise<T> => {
@@ -156,13 +99,11 @@ export class TaddyWeb {
 
       if (payload && method === 'GET') {
         const json = JSON.stringify(payload);
-        if (json !== '{}') endpoint += '?__payload=' + encodeURIComponent(json);
+        if (json !== '{}') url += '?__payload=' + encodeURIComponent(json);
       }
 
       if (this.config.debug)
-        console.log('Taddy: Request', method, endpoint.split('?')[0], JSON.parse(JSON.stringify(payload)));
-
-      const url = `${this.config.apiUrl}${endpoint}`;
+        console.log('Taddy: Request', method, url.split('?')[0], JSON.parse(JSON.stringify(payload)));
 
       fetch(url, options)
         .then((response) => {
