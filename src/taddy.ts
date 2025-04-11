@@ -17,6 +17,7 @@ export class TaddyWeb {
   private readonly user: WebApp['initDataUnsafe']['user'];
   private _ads?: Ads;
   private _exchange?: Exchange;
+  private _user: Partial<TelegramUser> = {};
 
   constructor(pubId: string, config?: TaddyConfig) {
     if (!window.Telegram || !window.Telegram.WebApp) throw new Error('Taddy: Telegram WebApp script is not loaded');
@@ -30,6 +31,7 @@ export class TaddyWeb {
 
   private getUser(): TelegramUser {
     return {
+      ...this._user,
       id: this.user?.id!,
       username: this.user?.username,
       firstName: this.user?.first_name,
@@ -40,7 +42,8 @@ export class TaddyWeb {
     };
   }
 
-  ready(): void {
+  ready(user?: Partial<TelegramUser>): void {
+    this._user = { ...this._user, ...user };
     if (!this.isReady) {
       this.call('/events/start', { start: this.initData.start_param }).then();
       this.isReady = true;

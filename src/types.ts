@@ -40,7 +40,7 @@ export interface TelegramUser {
   lastName?: string | null;
   username?: string | null;
   premium?: boolean | null;
-  gender?: string | null;
+  gender?: 'male' | 'female' | null;
   source?: string | null;
   language?: string | null;
   birthDate?: string | null;
