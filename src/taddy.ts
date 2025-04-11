@@ -45,7 +45,7 @@ export class TaddyWeb {
   ready(user?: Partial<TelegramUser>): void {
     this._user = { ...this._user, ...user };
     if (!this.isReady) {
-      this.call('/events/start', { start: this.initData.start_param }).then();
+      this.call('/events/start', { start: this.initData.start_param, url: window.location.href }).then();
       this.isReady = true;
       return;
     }
