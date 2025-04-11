@@ -4,7 +4,7 @@
   &__interstitial {
     font-family: Roboto, serif;
     font-size: 14px;
-    position: absolute;
+    position: fixed;
     background: var(--tg-theme-bg-color);
     color: var(--tg-theme-text-color);
     left: 0;
