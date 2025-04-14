@@ -1,6 +1,6 @@
 {
   "name": "taddy-sdk-web",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Taddy Web SDK",
   "keywords": [
     "taddy"
@@ -17,7 +17,9 @@
   "type": "commonjs",
   "main": "dist/taddy.min.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "webpack",
     "prepare": "npm run build"
