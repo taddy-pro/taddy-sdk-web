@@ -2,11 +2,22 @@ import { Ad } from '../types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Close, Sound } from './icons';
 
-const InterstitialVideo = ({ ad, click, close }: { ad: Ad; click(): void; close(): void }) => {
+const InterstitialVideo = ({
+  ad,
+  click,
+  close,
+  viewThrough,
+}: {
+  ad: Ad;
+  click(): void;
+  close(): void;
+  viewThrough(): void;
+}) => {
   const [muted, setMuted] = useState(true);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
+  const [canClose, setCanClose] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -20,10 +31,18 @@ const InterstitialVideo = ({ ad, click, close }: { ad: Ad; click(): void; close(
 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
+      if (!canClose && video.currentTime >= 15) {
+        setCanClose(true);
+        viewThrough();
+      }
     };
 
     const handleVideoEnd = () => {
       setShowInfo(true);
+      if (!canClose) {
+        setCanClose(true);
+        viewThrough();
+      }
       setTimeout(close, 5000);
     };
 
@@ -36,7 +55,7 @@ const InterstitialVideo = ({ ad, click, close }: { ad: Ad; click(): void; close(
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
-  }, []);
+  }, [canClose]);
 
   const videoClick = useCallback(() => {
     const video = videoRef.current;
@@ -79,7 +98,7 @@ const InterstitialVideo = ({ ad, click, close }: { ad: Ad; click(): void; close(
             @TaddyPro - ads in Telegram
           </a>
           <div
-            className={`taddy__interstitial__video__head__controls__close ${currentTime >= 15 || showInfo ? 'visible' : 'hidden'}`}
+            className={`taddy__interstitial__video__head__controls__close ${canClose || showInfo ? 'visible' : 'hidden'}`}
             onClick={close}
           >
             <Close />

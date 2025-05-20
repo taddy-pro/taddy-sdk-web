@@ -1,13 +1,26 @@
 import { Ad } from '../types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Close } from './icons';
 
-const InterstitialImage = ({ ad, click, close }: { ad: Ad; click(): void; close(): void }) => {
+const InterstitialImage = ({
+  ad,
+  click,
+  close,
+  viewThrough,
+}: {
+  ad: Ad;
+  click(): void;
+  close(): void;
+  viewThrough(): void;
+}) => {
   const [time, setTime] = useState(15);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tick = useCallback(() => {
     const t = time - 1;
+    if (t === 5) {
+      viewThrough();
+    }
     if (t >= 0) {
       setTime(t);
       timer.current = setTimeout(tick, 1000);
@@ -15,6 +28,14 @@ const InterstitialImage = ({ ad, click, close }: { ad: Ad; click(): void; close(
       close();
     }
   }, [time, setTime]);
+
+  const showButton = useMemo(() => {
+    return time <= 12;
+  }, [time]);
+
+  const canClose = useMemo(() => {
+    return time <= 5;
+  }, [time]);
 
   useEffect(() => {
     timer.current = setTimeout(tick, 1000);
@@ -25,7 +46,7 @@ const InterstitialImage = ({ ad, click, close }: { ad: Ad; click(): void; close(
 
   return (
     <div className="taddy__interstitial__image">
-      {time <= 5 && (
+      {canClose && (
         <button className="taddy__interstitial__image__close" onClick={close}>
           <Close color={window.Telegram.WebApp.themeParams.bg_color} />
         </button>
@@ -42,7 +63,7 @@ const InterstitialImage = ({ ad, click, close }: { ad: Ad; click(): void; close(
         <span className="taddy__interstitial__image__card__title">{ad.title}</span>
         <span className="taddy__interstitial__image__card__description">{ad.description}</span>
       </div>
-      <button className={`taddy__interstitial__image__button ${time <= 12 ? 'visible' : 'hidden'}`} onClick={click}>
+      <button className={`taddy__interstitial__image__button ${showButton ? 'visible' : 'hidden'}`} onClick={click}>
         {ad.button}
       </button>
       <div className="taddy__interstitial__image__spacer" />

@@ -60,6 +60,7 @@ export interface Ad {
 
 export interface InterstitialConfig {
   onClosed?(): void;
+  onViewThrough?(id: string): void;
 }
 
 export enum EFormat {
