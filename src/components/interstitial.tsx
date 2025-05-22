@@ -30,7 +30,10 @@ export const showInterstitial = (ad: Ad, config: InterstitialConfig, taddy: Tadd
       if (config.onClosed) config.onClosed();
       resolve(true);
     };
+    let isViewThrough = false;
     const viewThrough = () => {
+      if (isViewThrough) return;
+      isViewThrough = true;
       void taddy.call('/ads/view-through', { id: ad.id });
       if (config.onViewThrough) config.onViewThrough(ad.id);
     };

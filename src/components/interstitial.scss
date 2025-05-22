@@ -62,10 +62,10 @@
             width: 20px;
             height: 20px;
             transition: all ease 1s;
-            &.visible {
+            &-visible {
               opacity: 1;
             }
-            &.hidden {
+            &-hidden {
               opacity: 0;
             }
           }
@@ -99,7 +99,7 @@
           transition: all ease 0.5s;
           opacity: 0;
           padding: 16px;
-          &.visible {
+          &-visible {
             opacity: 1;
           }
         }

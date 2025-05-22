@@ -98,7 +98,7 @@ const InterstitialVideo = ({
             @TaddyPro - ads in Telegram
           </a>
           <div
-            className={`taddy__interstitial__video__head__controls__close ${canClose || showInfo ? 'visible' : 'hidden'}`}
+            className={`taddy__interstitial__video__head__controls__close ${canClose || showInfo ? 'taddy__interstitial__video__head__controls__close-visible' : 'taddy__interstitial__video__head__controls__close-hidden'}`}
             onClick={close}
           >
             <Close />
@@ -116,7 +116,7 @@ const InterstitialVideo = ({
 
       <div className="taddy__interstitial__video__footer">
         <button
-          className={`taddy__interstitial__video__footer__button ${currentTime >= 5 ? 'visible' : 'hidden'}`}
+          className={`taddy__interstitial__video__footer__button ${currentTime >= 5 ? 'taddy__interstitial__video__footer__button-visible' : '-taddy__interstitial__video__footer__button-hidden'}`}
           onClick={click}
         >
           {ad.button}
