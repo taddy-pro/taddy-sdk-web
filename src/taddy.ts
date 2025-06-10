@@ -1,4 +1,4 @@
-import { TaddyConfig, TelegramUser, THeaders, THttpMethod, TResponse } from './types';
+import { CustomEvent, TaddyConfig, TelegramUser, THeaders, THttpMethod, TResponse } from './types';
 import { Ads } from './ads';
 import { Exchange } from './exchange';
 
@@ -42,14 +42,18 @@ export class TaddyWeb {
     };
   }
 
-  ready(user?: Partial<TelegramUser>): void {
-    this._user = { ...this._user, ...user };
-    if (!this.isReady) {
-      this.call('/events/start', { start: this.initData.start_param, url: window.location.href }).then();
-      this.isReady = true;
-      return;
-    }
-    console.warn('Taddy: ready() already called');
+  public customEvent(
+    event: CustomEvent,
+    options?: { value?: number | null; currency?: string; once?: boolean; payload?: Record<string, any> },
+  ) {
+    if (this.config.debug) console.info(`Taddy: Sending "${event}" event`, options);
+    this.call('/events/custom', {
+      event,
+      payload: options?.payload,
+      value: options?.value,
+      currency: options?.currency,
+      once: options?.once,
+    }).catch((e) => this.config.debug && console.warn('Taddy:', e));
   }
 
   public ads(): Ads {

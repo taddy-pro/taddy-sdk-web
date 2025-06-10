@@ -8,16 +8,12 @@ export class Exchange {
     this.taddy = taddy;
   }
 
+  /**
+   * @deprecated
+   */
   customEvent(event: CustomEvent, options?: { value?: number | null; currency?: string; once?: boolean }) {
-    if (this.taddy.config.debug) console.info(`Taddy: Sending "${event}" event`, options);
-    this.taddy
-      .call('/events/custom', {
-        event,
-        value: options?.value,
-        currency: options?.currency,
-        once: options?.once,
-      })
-      .catch((e) => this.taddy.config.debug && console.warn('Taddy:', e));
+    console.warn('Deprecated taddy.exchange().customEvent call. Please use taddy.customEvent directly');
+    this.taddy.customEvent(event, options);
   }
 
   feed = (options?: ExchangeFeedOptions) => {
@@ -29,9 +25,9 @@ export class Exchange {
     return this.taddy.call('/exchange/impressions', { ids: tasks.map((t) => t.id) });
   };
 
-  check = (task: FeedItem): Promise<boolean> => {
+  check(task: FeedItem): Promise<boolean> {
     return this.taddy.call<boolean>('/exchange/check', { taskId: task.id });
-  };
+  }
 
   open(task: FeedItem, autoCheck: boolean = true): Promise<boolean | null> {
     return new Promise((resolve, reject) => {
