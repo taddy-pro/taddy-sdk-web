@@ -57,7 +57,7 @@ export class TaddyWeb {
     options?: { value?: number | null; currency?: string; once?: boolean; payload?: Record<string, any> },
   ) {
     if (this.config.debug) console.info(`Taddy: Sending "${event}" event`, options);
-    this.call('/events/custom', {
+    return this.call<void>('/events/custom', {
       event,
       payload: options?.payload,
       value: options?.value,
