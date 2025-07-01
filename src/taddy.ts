@@ -2,6 +2,13 @@ import { CustomEvent, TaddyConfig, TelegramUser, THeaders, THttpMethod, TRespons
 import { Ads } from './ads';
 import { Exchange } from './exchange';
 
+export interface ResourceInitData {
+  id: number;
+  username: string;
+  apps: string[];
+  externalAds: boolean;
+}
+
 const defaultConfig: Partial<TaddyConfig> = {
   debug: false,
   apiUrl: 'https://t.tadly.pro/v1',
@@ -18,6 +25,7 @@ export class TaddyWeb {
   private _ads?: Ads;
   private _exchange?: Exchange;
   private _user: Partial<TelegramUser> = {};
+  // private _resourceInitData?: ResourceInitData;
 
   constructor(pubId: string, config?: TaddyConfig) {
     if (!window.Telegram || !window.Telegram.WebApp) throw new Error('Taddy: Telegram WebApp script is not loaded');
@@ -26,10 +34,21 @@ export class TaddyWeb {
     this.webApp = window.Telegram.WebApp;
     this.initData = this.webApp.initDataUnsafe;
     this.user = this.initData.user;
+    // void this.getResourceInitData();
     // document.addEventListener('DOMContentLoaded', () => this.logEvent('dom-ready'), { once: true });
   }
 
-  private getUser(): TelegramUser {
+  // public getResourceInitData = (): Promise<ResourceInitData> => {
+  //   return new Promise((resolve) => {
+  //     if (this._resourceInitData) return resolve(this._resourceInitData);
+  //     this.call<ResourceInitData>('/resources/init').then((data) => {
+  //       this._resourceInitData = data;
+  //       resolve(data);
+  //     });
+  //   });
+  // };
+
+  private getUser = (): TelegramUser => {
     return {
       ...this._user,
       id: this.user?.id!,
@@ -40,9 +59,9 @@ export class TaddyWeb {
       premium: this.user?.is_premium,
       source: this.initData.start_param || null,
     };
-  }
+  };
 
-  public ready(user?: Partial<TelegramUser>): void {
+  public ready = (user?: Partial<TelegramUser>): void => {
     this._user = { ...this._user, ...user };
     if (!this.isReady) {
       this.call('/events/start', { start: this.initData.start_param, url: window.location.href }).then();
@@ -50,21 +69,25 @@ export class TaddyWeb {
       return;
     }
     console.warn('Taddy: ready() already called');
-  }
+  };
 
-  public customEvent(
+  public customEvent = async (
     event: CustomEvent,
     options?: { value?: number | null; currency?: string; once?: boolean; payload?: Record<string, any> },
-  ) {
+  ) => {
     if (this.config.debug) console.info(`Taddy: Sending "${event}" event`, options);
-    return this.call<void>('/events/custom', {
-      event,
-      payload: options?.payload,
-      value: options?.value,
-      currency: options?.currency,
-      once: options?.once,
-    }).catch((e) => this.config.debug && console.warn('Taddy:', e));
-  }
+    try {
+      return await this.call<void>('/events/custom', {
+        event,
+        payload: options?.payload,
+        value: options?.value,
+        currency: options?.currency,
+        once: options?.once,
+      });
+    } catch (e) {
+      return this.config.debug && console.warn('Taddy:', e);
+    }
+  };
 
   public ads(): Ads {
     return this._ads ?? (this._ads = new Ads(this));
@@ -140,4 +163,10 @@ export class TaddyWeb {
         .catch((e) => processReject(e, -1));
     });
   };
+
+  debug(...v: any) {
+    if (this.config.debug) {
+      console.debug('Taddy: ', ...v);
+    }
+  }
 }

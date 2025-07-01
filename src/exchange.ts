@@ -13,7 +13,7 @@ export class Exchange {
    */
   customEvent(event: CustomEvent, options?: { value?: number | null; currency?: string; once?: boolean }) {
     console.warn('Deprecated taddy.exchange().customEvent call. Please use taddy.customEvent directly');
-    this.taddy.customEvent(event, options);
+    void this.taddy.customEvent(event, options);
   }
 
   feed = (options?: ExchangeFeedOptions) => {
@@ -34,7 +34,15 @@ export class Exchange {
       this.taddy
         .request<string>('POST', task.link)
         .then((link) => {
-          window.Telegram.WebApp.openTelegramLink(link);
+          if (link.startsWith('https://t.me')) {
+            window.Telegram.WebApp.openTelegramLink(link);
+          } else {
+            window.Telegram.WebApp.openLink(link, {
+              // @ts-ignore
+              try_browser: 'chrome',
+              try_instant_view: false,
+            });
+          }
           if (autoCheck) {
             let counter = 0;
             const check = () => {
