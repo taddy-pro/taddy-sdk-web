@@ -37,11 +37,8 @@ export class Exchange {
           if (link.startsWith('https://t.me')) {
             window.Telegram.WebApp.openTelegramLink(link);
           } else {
-            window.Telegram.WebApp.openLink(link, {
-              // @ts-ignore
-              try_browser: 'chrome',
-              try_instant_view: false,
-            });
+            window.Telegram.WebApp.openLink(link);
+            // window.Telegram.WebApp.openLink(link, { try_instant_view: false });
           }
           if (autoCheck) {
             let counter = 0;

@@ -38,11 +38,8 @@ export const showInterstitial = (ad: Ad, config: InterstitialConfig, taddy: Tadd
       if (config.onViewThrough) config.onViewThrough(ad.id);
     };
     const click = () => {
-      window.Telegram.WebApp.openLink(ad.link, {
-        // @ts-ignore
-        try_browser: 'chrome',
-        try_instant_view: false,
-      });
+      window.Telegram.WebApp.openLink(ad.link);
+      // window.Telegram.WebApp.openLink(ad.link, { try_instant_view: false });
     };
     createRoot(div).render(<Interstitial ad={ad} click={click} close={close} viewThrough={viewThrough} />);
   });
