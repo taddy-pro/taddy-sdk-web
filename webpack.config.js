@@ -4,28 +4,32 @@ module.exports = {
   entry: './src/index.ts',
   output: {
     filename: 'taddy.min.js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist/js'),
     libraryTarget: 'umd',
     globalObject: 'this',
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
+    alias: {
+      react: 'preact/compat',
+      'react-dom': 'preact/compat',
+    },
   },
   module: {
     rules: [
       {
         test: /\.(ts|tsx)$/,
-        use: 'ts-loader',
+        use: {
+          loader: 'ts-loader',
+          options: {
+            configFile: 'tsconfig.build.json',
+          },
+        },
         exclude: /node_modules/,
       },
-      // Новое правило для SCSS/SASS
       {
         test: /\.(scss|sass)$/,
-        use: [
-          'style-loader',  // Встраивает стили в DOM
-          'css-loader',   // Преобразует CSS в CommonJS
-          'sass-loader'   // Компилирует SASS/SCSS в CSS
-        ],
+        use: ['style-loader', 'css-loader', 'sass-loader'],
       },
     ],
   },

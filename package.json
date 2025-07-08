@@ -1,28 +1,23 @@
 {
   "name": "taddy-sdk-web",
-  "version": "1.2.12",
+  "version": "1.3.4",
   "description": "Taddy Web SDK",
   "keywords": [
     "taddy"
   ],
-  "homepage": "https://github.com/taddy-pro/taddy-sdk-web#readme",
-  "bugs": {
-    "url": "https://github.com/taddy-pro/taddy-sdk-web/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/taddy-pro/taddy-sdk-web.git"
-  },
+  "homepage": "https://taddy.gitbook.io/docs/sdk/web",
   "license": "MIT",
   "type": "commonjs",
-  "main": "dist/taddy.min.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "files": [
-    "dist"
+    "dist/types"
   ],
   "scripts": {
-    "build": "webpack",
-    "prepare": "npm run build"
+    "build": "npm run build:types && npm run build:js",
+    "build:types": "tsc -p tsconfig.types.json",
+    "build:js": "webpack",
+    "prepublishOnly": "npm run build:types",
+    "deploy": "export $(cat .env | xargs) && npm run build:js && rsync -av --delete ./dist/js/ $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH && curl -X POST \"https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache\" -H \"Authorization: Bearer $CF_CLEAR_CACHE_TOKEN\" -H \"Content-Type: application/json\" --data '{\"hosts\":[\"sdk.taddy.pro\"]}'"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.26.3",
@@ -38,10 +33,9 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "@types/telegram-web-app": "latest",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
-    "@types/telegram-web-app": "^7.10.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "preact": "^10.26.9"
   }
 }

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist/types",
+    "strict": true,
+    "jsx": "react-jsx",
+  },
+  "include": ["src"]
+}

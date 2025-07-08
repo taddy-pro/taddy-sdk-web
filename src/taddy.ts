@@ -7,6 +7,8 @@ export interface ResourceInitData {
   username: string;
   apps: string[];
   externalAds: boolean;
+  teleAdsToken: string;
+  teleAdsUnitId: number;
 }
 
 const defaultConfig: Partial<TaddyConfig> = {
@@ -14,9 +16,15 @@ const defaultConfig: Partial<TaddyConfig> = {
   apiUrl: 'https://t.tadly.pro/v1',
 };
 
+declare global {
+  interface Window {
+    Telegram: Telegram;
+  }
+}
+
 export class TaddyWeb {
-  public readonly pubId: string;
-  public readonly config: TaddyConfig;
+  public pubId: string;
+  public config: TaddyConfig;
   public isReady: boolean = false;
 
   private webApp: WebApp;
@@ -25,28 +33,28 @@ export class TaddyWeb {
   private _ads?: Ads;
   private _exchange?: Exchange;
   private _user: Partial<TelegramUser> = {};
-  // private _resourceInitData?: ResourceInitData;
+  private _resourceInitData?: ResourceInitData;
 
   constructor(pubId: string, config?: TaddyConfig) {
-    if (!window.Telegram || !window.Telegram.WebApp) throw new Error('Taddy: Telegram WebApp script is not loaded');
+    if (!window.Telegram || !window.Telegram.WebApp) throw new Error('[Taddy] Telegram WebApp script is not loaded');
     this.pubId = pubId;
     this.config = { ...defaultConfig, ...config };
     this.webApp = window.Telegram.WebApp;
     this.initData = this.webApp.initDataUnsafe;
     this.user = this.initData.user;
-    // void this.getResourceInitData();
+    void this.getResourceInitData();
     // document.addEventListener('DOMContentLoaded', () => this.logEvent('dom-ready'), { once: true });
   }
 
-  // public getResourceInitData = (): Promise<ResourceInitData> => {
-  //   return new Promise((resolve) => {
-  //     if (this._resourceInitData) return resolve(this._resourceInitData);
-  //     this.call<ResourceInitData>('/resources/init').then((data) => {
-  //       this._resourceInitData = data;
-  //       resolve(data);
-  //     });
-  //   });
-  // };
+  public getResourceInitData = (): Promise<ResourceInitData> => {
+    return new Promise((resolve) => {
+      if (this._resourceInitData) return resolve(this._resourceInitData);
+      this.call<ResourceInitData>('/resources/init').then((data) => {
+        this._resourceInitData = data;
+        resolve(data);
+      });
+    });
+  };
 
   private getUser = (): TelegramUser => {
     return {
@@ -68,14 +76,14 @@ export class TaddyWeb {
       this.isReady = true;
       return;
     }
-    console.warn('Taddy: ready() already called');
+    console.warn('[Taddy] ready() already called');
   };
 
   public customEvent = async (
     event: CustomEvent,
     options?: { value?: number | null; currency?: string; once?: boolean; payload?: Record<string, any> },
   ) => {
-    if (this.config.debug) console.info(`Taddy: Sending "${event}" event`, options);
+    this.debug(`Sending "${event}" event`, options);
     try {
       return await this.call<void>('/events/custom', {
         event,
@@ -85,7 +93,7 @@ export class TaddyWeb {
         once: options?.once,
       });
     } catch (e) {
-      return this.config.debug && console.warn('Taddy:', e);
+      console.warn('[Taddy]', e);
     }
   };
 
@@ -116,7 +124,7 @@ export class TaddyWeb {
     // @ts-ignore
     return new Promise((resolve, reject) => {
       const processReject = (error: string, code: number) => {
-        if (this.config.debug) console.error('Taddy: Error', code, error);
+        console.error('[Taddy]', error, code);
         reject(error);
       };
 
@@ -142,8 +150,7 @@ export class TaddyWeb {
         if (json !== '{}') url += '?__payload=' + encodeURIComponent(json);
       }
 
-      if (this.config.debug)
-        console.log('Taddy: Request', method, url.split('?')[0], JSON.parse(JSON.stringify(payload)));
+      this.debug('Request', method, url.split('?')[0], JSON.parse(JSON.stringify(payload)));
 
       fetch(url, options)
         .then((response) => {
@@ -154,7 +161,7 @@ export class TaddyWeb {
               .then((data: TResponse) => {
                 if (data.error) processReject(data.error, response.status);
                 else {
-                  if (this.config.debug) console.info('Taddy: Result', data.result);
+                  this.debug('Result', data.result);
                   resolve(data.result);
                 }
               })
@@ -164,9 +171,11 @@ export class TaddyWeb {
     });
   };
 
-  debug(...v: any) {
+  public debug = (...v: any) => {
     if (this.config.debug) {
-      console.debug('Taddy: ', ...v);
+      console.log('[Taddy]', ...v);
     }
-  }
+  };
 }
+
+export const Taddy = (pubId: string, config?: TaddyConfig) => new TaddyWeb(pubId, config);

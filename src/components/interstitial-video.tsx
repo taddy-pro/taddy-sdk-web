@@ -1,5 +1,5 @@
 import { Ad } from '../types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'preact/compat';
 import { Close, Sound } from './icons';
 
 const InterstitialVideo = ({

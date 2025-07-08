@@ -21,12 +21,14 @@ export interface FeedItem {
   image: string;
   type: 'bot' | 'app';
   link: string;
+  status: 'new' | 'pending' | 'completed' | 'claimed';
 }
 
 export interface ExchangeFeedOptions {
   limit?: number;
   imageFormat?: 'png' | 'jpg' | 'webp';
   autoImpressions?: boolean;
+  showCompleted?: boolean;
 }
 
 export interface TaddyConfig {
