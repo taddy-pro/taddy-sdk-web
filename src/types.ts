@@ -16,12 +16,13 @@ export type TResponse = {
 
 export interface FeedItem {
   id: Identifier;
+  uid: Identifier;
   title: string;
   description: string;
   image: string;
   type: 'bot' | 'app';
   link: string;
-  status: 'new' | 'pending' | 'completed' | 'claimed';
+  status: 'new' | 'pending' | 'completed' | 'claimed' | 'unknown';
 }
 
 export interface ExchangeFeedOptions {
