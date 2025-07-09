@@ -33,7 +33,7 @@ export class Exchange {
     return new Promise((resolve, reject) => {
       this.taddy
         .request<string>('POST', task.link)
-        .then((link) => {
+        .then((link: string) => {
           if (link.startsWith('https://t.me')) {
             window.Telegram.WebApp.openTelegramLink(link);
           } else {

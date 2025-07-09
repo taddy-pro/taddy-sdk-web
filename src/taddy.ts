@@ -23,25 +23,28 @@ declare global {
 }
 
 export class TaddyWeb {
-  public pubId: string;
-  public config: TaddyConfig;
+  public config: TaddyConfig = defaultConfig;
+  public pubId?: string;
+  public isInit: boolean = false;
   public isReady: boolean = false;
 
-  private webApp: WebApp;
-  private initData: WebApp['initDataUnsafe'];
-  private readonly user: WebApp['initDataUnsafe']['user'];
+  private webApp?: WebApp;
+  private initData?: WebApp['initDataUnsafe'];
+  private user?: WebApp['initDataUnsafe']['user'];
   private _ads?: Ads;
   private _exchange?: Exchange;
   private _user: Partial<TelegramUser> = {};
   private _resourceInitData?: ResourceInitData;
 
-  constructor(pubId: string, config?: TaddyConfig) {
+  init(pubId: string, config?: TaddyConfig) {
+    if (this.isInit) throw new Error('[Taddy] Already initialized');
     if (!window.Telegram || !window.Telegram.WebApp) throw new Error('[Taddy] Telegram WebApp script is not loaded');
     this.pubId = pubId;
     this.config = { ...defaultConfig, ...config };
     this.webApp = window.Telegram.WebApp;
     this.initData = this.webApp.initDataUnsafe;
     this.user = this.initData.user;
+    this.isInit = true;
     void this.getResourceInitData();
     // document.addEventListener('DOMContentLoaded', () => this.logEvent('dom-ready'), { once: true });
   }
@@ -65,14 +68,19 @@ export class TaddyWeb {
       lastName: this.user?.last_name,
       language: this.user?.language_code,
       premium: this.user?.is_premium,
-      source: this.initData.start_param || null,
+      source: this.initData?.start_param || null,
     };
   };
 
+  public checkInit = () => {
+    if (!this.isInit) throw new Error('[Taddy] Not initialized. Call window.Taddy.init(pubId, config)');
+  };
+
   public ready = (user?: Partial<TelegramUser>): void => {
+    this.checkInit();
     this._user = { ...this._user, ...user };
     if (!this.isReady) {
-      this.call('/events/start', { start: this.initData.start_param, url: window.location.href }).then();
+      this.call('/events/start', { start: this.initData?.start_param, url: window.location.href }).then();
       this.isReady = true;
       return;
     }
@@ -84,6 +92,7 @@ export class TaddyWeb {
     options?: { value?: number | null; currency?: string; once?: boolean; payload?: Record<string, any> },
   ) => {
     this.debug(`Sending "${event}" event`, options);
+    this.checkInit();
     try {
       return await this.call<void>('/events/custom', {
         event,
@@ -98,14 +107,17 @@ export class TaddyWeb {
   };
 
   public ads(): Ads {
+    this.checkInit();
     return this._ads ?? (this._ads = new Ads(this));
   }
 
   public exchange(): Exchange {
+    this.checkInit();
     return this._exchange ?? (this._exchange = new Exchange(this));
   }
 
   public call = <T>(endpoint: string, payload: object = {}) => {
+    this.checkInit();
     const url = `${this.config.apiUrl}${endpoint}`;
     return this.request('POST', url, {
       pubId: this.pubId,
@@ -178,4 +190,4 @@ export class TaddyWeb {
   };
 }
 
-export const Taddy = (pubId: string, config?: TaddyConfig) => new TaddyWeb(pubId, config);
+export const Taddy = new TaddyWeb();

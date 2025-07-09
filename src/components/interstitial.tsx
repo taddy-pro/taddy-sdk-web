@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import InterstitialImage from './interstitial-image';
 import InterstitialVideo from './interstitial-video';
 import './interstitial.scss';
+
 import { TaddyWeb } from '../taddy';
 
 interface Props {

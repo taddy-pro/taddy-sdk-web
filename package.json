@@ -1,6 +1,6 @@
 {
   "name": "taddy-sdk-web",
-  "version": "1.3.6",
+  "version": "1.3.8",
   "description": "Taddy Web SDK",
   "keywords": [
     "taddy"
@@ -16,7 +16,6 @@
       "types": "./dist/types/index.d.ts"
     }
   },
-  "sideEffects": false,
   "scripts": {
     "build": "npm run build:types && npm run build:js",
     "build:types": "tsc -p tsconfig.types.json",
