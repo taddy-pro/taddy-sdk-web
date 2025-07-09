@@ -1,6 +1,6 @@
 {
   "name": "taddy-sdk-web",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "Taddy Web SDK",
   "keywords": [
     "taddy"
@@ -9,9 +9,14 @@
   "license": "MIT",
   "type": "commonjs",
   "types": "dist/types/index.d.ts",
-  "files": [
-    "dist/types"
-  ],
+  "typings": "dist/types/index.d.ts",
+  "files": ["dist/types"],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "sideEffects": false,
   "scripts": {
     "build": "npm run build:types && npm run build:js",
     "build:types": "tsc -p tsconfig.types.json",
