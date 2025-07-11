@@ -36,15 +36,12 @@ export class Ads {
   };
 
   public interstitial = (config?: InterstitialConfig): Promise<boolean> => {
+    config = { ...config, ...defaultInterstitialConfig };
     return new Promise((resolve) => {
       this.preload(EFormat.Interstitial)
         .then((loaded) => {
-          if (!loaded) return resolve(this.showExternalAd());
-          showInterstitial(
-            this.ads[EFormat.Interstitial]!,
-            { ...config, ...defaultInterstitialConfig },
-            this.taddy,
-          ).finally(() => {
+          if (!loaded) return resolve(this.showExternalAd(config));
+          showInterstitial(this.ads[EFormat.Interstitial]!, config, this.taddy).finally(() => {
             delete this.ads[EFormat.Interstitial];
             resolve(true);
           });
@@ -64,15 +61,18 @@ export class Ads {
     this.taddy.call('/ads/click', { id: ad.id }).then();
   };
 
-  private showExternalAd = async (): Promise<boolean> => {
+  private showExternalAd = async (config: InterstitialConfig): Promise<boolean> => {
     try {
+      if (this.taddy.config.disableExternalProviders) {
+        this.taddy.debug('Skipping external providers');
+        return false;
+      }
       const initData = await this.taddy.getResourceInitData();
       if (!initData.externalAds) return false;
       const providers = [this.playmaticProvider, this.teleadsProvider];
-      // const providers = [this.playmaticProvider];
       for (const provider of providers) {
         try {
-          if (await provider(initData)) return true;
+          if (await provider(initData, config)) return true;
         } catch (e) {
           console.warn('[Taddy]', e);
         }
@@ -84,15 +84,18 @@ export class Ads {
     return false;
   };
 
-  private teleadsProvider = async (initData: ResourceInitData): Promise<boolean> => {
-    this.taddy.debug('TeleAds');
+  private teleadsProvider = async (initData: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
+    if (this.taddy.config.disableTeleAdsProvider || !initData.teleAds) {
+      this.taddy.debug('Skipping TeleAds');
+      return false;
+    }
+    this.taddy.debug('[TeleAds]');
     return new Promise(async (resolve) => {
       try {
         if (!initData.teleAdsUnitId || !initData.teleAdsToken) {
           this.taddy.debug('[TeleAds] not ready');
           return resolve(false);
         }
-
         const user = window.Telegram.WebApp.initDataUnsafe.user!;
         // const response = await window.fetch('https://api.stage.teleads.pro/api/publish/sync', {
         const response = await window.fetch('https://api.teleads.pro/api/publish/sync', {
@@ -108,14 +111,10 @@ export class Ads {
           }),
         });
         const result = await response.json();
-
-        console.log(result);
-
         if (!result.data) {
           this.taddy.debug('[TeleAds] No ads');
           return resolve(false);
         }
-
         await loadJs('https://assets.teleads.pro/sdk/taddy/index.js');
         // @ts-ignore
         window.TeleAdsTMA.init({
@@ -129,6 +128,8 @@ export class Ads {
           onAdLoaded: () => (adLoaded = true),
         });
         this.taddy.debug('[TeleAds] finished', adLoaded);
+        if (adLoaded && config.onViewThrough) config.onViewThrough();
+        if (config.onClosed) config.onClosed();
         resolve(adLoaded);
       } catch (error) {
         console.error('[TeleAds]', error);
@@ -137,7 +138,11 @@ export class Ads {
     });
   };
 
-  private playmaticProvider = async (initData: ResourceInitData): Promise<boolean> => {
+  private playmaticProvider = async (initData: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
+    if (this.taddy.config.disablePlaymaticProvider || !initData.playmatic) {
+      this.taddy.debug('Skipping Playmatic');
+      return false;
+    }
     this.taddy.debug('[Playmatic]');
     return window
       .fetch(
@@ -179,7 +184,6 @@ export class Ads {
             });
             // @ts-ignore
             window.pmCallBack = (act: string) => {
-              // this.taddy.debug('[Playmatic pmCallBack]', act, data);
               if (act === 'show mfs') {
                 this.taddy.debug('[Playmatic]', 'IMPRESSION');
                 this.sendImpression({ id: tag } as Ad);
@@ -190,6 +194,8 @@ export class Ads {
               }
               if (act === 'stop mfs') {
                 this.taddy.debug('[Playmatic]', 'AD CLOSED');
+                if (config.onViewThrough) config.onViewThrough();
+                if (config.onClosed) config.onClosed();
                 return resolve(true);
               }
             };

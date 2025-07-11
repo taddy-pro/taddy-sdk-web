@@ -35,6 +35,9 @@ export interface ExchangeFeedOptions {
 export interface TaddyConfig {
   apiUrl?: string;
   debug?: boolean;
+  disableExternalProviders?: boolean;
+  disablePlaymaticProvider?: boolean;
+  disableTeleAdsProvider?: boolean;
 }
 
 export interface TelegramUser {
@@ -63,7 +66,7 @@ export interface Ad {
 
 export interface InterstitialConfig {
   onClosed?(): void;
-  onViewThrough?(id: string): void;
+  onViewThrough?(id?: string): void;
 }
 
 export enum EFormat {

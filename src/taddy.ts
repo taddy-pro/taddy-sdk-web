@@ -7,6 +7,8 @@ export interface ResourceInitData {
   username: string;
   apps: string[];
   externalAds: boolean;
+  playmatic: boolean;
+  teleAds: boolean;
   teleAdsToken: string;
   teleAdsUnitId: number;
 }
