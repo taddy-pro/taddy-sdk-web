@@ -39,8 +39,7 @@ export class Ads {
     return new Promise((resolve) => {
       this.preload(EFormat.Interstitial)
         .then((loaded) => {
-          // return this.showExternalAd();
-          if (!loaded) return this.showExternalAd();
+          if (!loaded) return resolve(this.showExternalAd());
           showInterstitial(
             this.ads[EFormat.Interstitial]!,
             { ...config, ...defaultInterstitialConfig },
@@ -68,12 +67,12 @@ export class Ads {
   private showExternalAd = async (): Promise<boolean> => {
     try {
       const initData = await this.taddy.getResourceInitData();
-      if (!initData.externalAds) return Promise.resolve(false);
-      // const providers = [this.teleadsProvider, this.playmaticProvider];
-      const providers = [this.playmaticProvider];
+      if (!initData.externalAds) return false;
+      const providers = [this.playmaticProvider, this.teleadsProvider];
+      // const providers = [this.playmaticProvider];
       for (const provider of providers) {
         try {
-          if (await provider(initData)) return Promise.resolve(true);
+          if (await provider(initData)) return true;
         } catch (e) {
           console.warn('[Taddy]', e);
         }
@@ -82,30 +81,61 @@ export class Ads {
       console.error('[Taddy]', e);
     }
     this.taddy.debug('Nothing to show');
-    return Promise.resolve(false);
+    return false;
   };
-  //
-  // private teleadsProvider = async (initData: ResourceInitData): Promise<boolean> => {
-  //   this.taddy.debug('TeleAds');
-  //   return new Promise(async (resolve) => {
-  //     try {
-  //       if (!initData.teleAdsUnitId || !initData.teleAdsToken) return resolve(false);
-  //       await loadJs('https://assets.teleads.pro/sdk/index.umd.js?v2');
-  //       // @ts-ignore
-  //       window.TeleAdsTMA.init(initData.teleAdsToken);
-  //       let adLoaded = false;
-  //       // @ts-ignore
-  //       await window.TeleAdsTMA.showAd({
-  //         adUnitId: initData.teleAdsUnitId.toString(),
-  //         onAdLoaded: () => (adLoaded = true),
-  //       });
-  //       resolve(adLoaded);
-  //     } catch (error) {
-  //       console.error('[TeleAds]', error);
-  //       resolve(false);
-  //     }
-  //   });
-  // };
+
+  private teleadsProvider = async (initData: ResourceInitData): Promise<boolean> => {
+    this.taddy.debug('TeleAds');
+    return new Promise(async (resolve) => {
+      try {
+        if (!initData.teleAdsUnitId || !initData.teleAdsToken) {
+          this.taddy.debug('[TeleAds] not ready');
+          return resolve(false);
+        }
+
+        const user = window.Telegram.WebApp.initDataUnsafe.user!;
+        // const response = await window.fetch('https://api.stage.teleads.pro/api/publish/sync', {
+        const response = await window.fetch('https://api.teleads.pro/api/publish/sync', {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${initData.teleAdsToken}`,
+          },
+          body: JSON.stringify({
+            unitId: initData.teleAdsUnitId,
+            supid: user.id, // Math.round(Math.random() * user.id),
+            userRawData: user,
+            requirePrice: true,
+          }),
+        });
+        const result = await response.json();
+
+        console.log(result);
+
+        if (!result.data) {
+          this.taddy.debug('[TeleAds] No ads');
+          return resolve(false);
+        }
+
+        await loadJs('https://assets.teleads.pro/sdk/taddy/index.js');
+        // @ts-ignore
+        window.TeleAdsTMA.init({
+          debug: this.taddy.config.debug,
+          //endpointApi: 'https://api.stage.teleads.pro/api',
+        });
+        let adLoaded = false;
+        // @ts-ignore
+        await window.TeleAdsTMA.showAd(result.data, {
+          adUnitId: initData.teleAdsUnitId.toString(),
+          onAdLoaded: () => (adLoaded = true),
+        });
+        this.taddy.debug('[TeleAds] finished', adLoaded);
+        resolve(adLoaded);
+      } catch (error) {
+        console.error('[TeleAds]', error);
+        resolve(false);
+      }
+    });
+  };
 
   private playmaticProvider = async (initData: ResourceInitData): Promise<boolean> => {
     this.taddy.debug('[Playmatic]');
@@ -116,7 +146,7 @@ export class Ads {
       .then((res) => res.text())
       .then(
         (xml) =>
-          new Promise(async (resolve, reject) => {
+          new Promise(async (resolve) => {
             if (xml.length <= 27) {
               this.taddy.debug('[Playmatic]', 'Empty VAST');
               return resolve(false);
@@ -148,7 +178,7 @@ export class Ads {
               ad,
             });
             // @ts-ignore
-            window.pmCallBack = (act: string, data: any) => {
+            window.pmCallBack = (act: string) => {
               // this.taddy.debug('[Playmatic pmCallBack]', act, data);
               if (act === 'show mfs') {
                 this.taddy.debug('[Playmatic]', 'IMPRESSION');
