@@ -1,6 +1,7 @@
 import { CustomEvent, TaddyConfig, TelegramUser, THeaders, THttpMethod, TResponse } from './types';
 import { Ads } from './ads';
 import { Exchange } from './exchange';
+import { TADDY_VERSION } from './version';
 
 export interface ResourceInitData {
   id: number;
@@ -122,6 +123,7 @@ export class TaddyWeb {
     this.checkInit();
     const url = `${this.config.apiUrl}${endpoint}`;
     return this.request('POST', url, {
+      sdkVersion: TADDY_VERSION,
       pubId: this.pubId,
       user: this.getUser(),
       origin: 'web',

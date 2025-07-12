@@ -1,4 +1,16 @@
 const path = require('path');
+const webpack = require('webpack');
+const fs = require('fs');
+
+class VersionPlugin {
+  apply(compiler) {
+    compiler.hooks.beforeRun.tap('VersionPlugin', () => {
+      const version = require('./package.json').version;
+      const versionContent = `export const TADDY_VERSION = '${version}';`;
+      fs.writeFileSync(path.resolve(__dirname, 'src/version.ts'), versionContent);
+    });
+  }
+}
 
 module.exports = {
   entry: './src/index.ts',
@@ -33,5 +45,6 @@ module.exports = {
       },
     ],
   },
+  plugins: [new VersionPlugin()],
   mode: 'production',
 };
