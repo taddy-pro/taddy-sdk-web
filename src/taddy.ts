@@ -3,6 +3,12 @@ import { Ads } from './ads';
 import { Exchange } from './exchange';
 import { TADDY_VERSION } from './version';
 
+export enum Network {
+  Taddy = 'taddy',
+  Playmatic = 'playmatic',
+  TeleAds = 'teleads',
+}
+
 export interface ResourceInitData {
   id: number;
   username: string;
@@ -12,6 +18,7 @@ export interface ResourceInitData {
   teleAds: boolean;
   teleAdsToken: string;
   teleAdsUnitId: number;
+  networks: Network[];
 }
 
 const defaultConfig: Partial<TaddyConfig> = {
@@ -40,8 +47,8 @@ export class TaddyWeb {
   private _resourceInitData?: ResourceInitData;
 
   init(pubId: string, config?: TaddyConfig) {
-    if (this.isInit) throw new Error('[Taddy] Already initialized');
-    if (!window.Telegram || !window.Telegram.WebApp) throw new Error('[Taddy] Telegram WebApp script is not loaded');
+    if (this.isInit) throw new Error('[TaddySDK] Already initialized');
+    if (!window.Telegram || !window.Telegram.WebApp) throw new Error('[TaddySDK] Telegram WebApp script is not loaded');
     this.pubId = pubId;
     this.config = { ...defaultConfig, ...config };
     this.webApp = window.Telegram.WebApp;
@@ -87,7 +94,7 @@ export class TaddyWeb {
       this.isReady = true;
       return;
     }
-    console.warn('[Taddy] ready() already called');
+    console.warn('[TaddySDK] ready() already called');
   };
 
   public customEvent = async (
@@ -105,7 +112,7 @@ export class TaddyWeb {
         once: options?.once,
       });
     } catch (e) {
-      console.warn('[Taddy]', e);
+      console.warn('[TaddySDK]', e);
     }
   };
 
@@ -140,7 +147,7 @@ export class TaddyWeb {
     // @ts-ignore
     return new Promise((resolve, reject) => {
       const processReject = (error: string, code: number) => {
-        console.error('[Taddy]', error, code);
+        console.error('[TaddySDK]', error, code);
         reject(error);
       };
 
@@ -189,7 +196,7 @@ export class TaddyWeb {
 
   public debug = (...v: any) => {
     if (this.config.debug) {
-      console.log('[Taddy]', ...v);
+      console.log('[TaddySDK]', ...v);
     }
   };
 }

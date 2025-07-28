@@ -12,12 +12,12 @@ export class Exchange {
    * @deprecated
    */
   customEvent(event: CustomEvent, options?: { value?: number | null; currency?: string; once?: boolean }) {
-    console.warn('[Taddy] Deprecated taddy.exchange().customEvent call. Please use taddy.customEvent directly');
+    console.warn('[TaddySDK] Deprecated taddy.exchange().customEvent call. Please use taddy.customEvent directly');
     void this.taddy.customEvent(event, options);
   }
 
   feed = (options?: ExchangeFeedOptions) => {
-    if (!this.taddy.isReady) throw new Error('[Taddy] ready() not called');
+    if (!this.taddy.isReady) throw new Error('[TaddySDK] ready() not called');
     return this.taddy.call<FeedItem[]>('/exchange/feed', options);
   };
 

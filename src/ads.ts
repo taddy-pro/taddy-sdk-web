@@ -1,4 +1,4 @@
-import { ResourceInitData, TaddyWeb } from './taddy';
+import { Network, ResourceInitData, TaddyWeb } from './taddy';
 import { Ad, EFormat, InterstitialConfig } from './types';
 import { showInterstitial } from './components/interstitial';
 import { loadJs, loadResource } from './utils';
@@ -35,22 +35,6 @@ export class Ads {
     });
   };
 
-  public interstitial = (config?: InterstitialConfig): Promise<boolean> => {
-    config = { ...config, ...defaultInterstitialConfig };
-    return new Promise((resolve) => {
-      this.preload(EFormat.Interstitial)
-        .then((loaded) => {
-          if (!loaded) return resolve(this.showExternalAd(config));
-          showInterstitial(this.ads[EFormat.Interstitial]!, config, this.taddy).finally(() => {
-            delete this.ads[EFormat.Interstitial];
-            resolve(true);
-          });
-          setTimeout(() => this.sendImpression(this.ads[EFormat.Interstitial]!), 1000);
-        })
-        .catch(() => resolve(false));
-    });
-  };
-
   public checkViewThrough = (id: string) => this.taddy.call<boolean>('/ads/view-through/check', { id });
 
   public sendImpression = (ad: Ad) => {
@@ -61,27 +45,46 @@ export class Ads {
     this.taddy.call('/ads/click', { id: ad.id }).then();
   };
 
-  private showExternalAd = async (config: InterstitialConfig): Promise<boolean> => {
-    try {
-      if (this.taddy.config.disableExternalProviders) {
-        this.taddy.debug('Skipping external providers');
-        return false;
-      }
-      const initData = await this.taddy.getResourceInitData();
-      if (!initData.externalAds) return false;
-      const providers = [this.playmaticProvider, this.teleadsProvider];
-      for (const provider of providers) {
-        try {
-          if (await provider(initData, config)) return true;
-        } catch (e) {
-          console.warn('[Taddy]', e);
+  public interstitial = async (config?: InterstitialConfig): Promise<boolean> => {
+    config = { ...config, ...defaultInterstitialConfig };
+    const initData = await this.taddy.getResourceInitData();
+    const providers: Record<Network, typeof this.taddyProvider> = {
+      [Network.Taddy]: this.taddyProvider,
+      [Network.Playmatic]: this.playmaticProvider,
+      [Network.TeleAds]: this.teleadsProvider,
+    };
+    for (const network of initData.networks) {
+      try {
+        if (network !== Network.Taddy) {
+          if (this.taddy.config.disableExternalProviders) {
+            this.taddy.debug('Skipping external network:', network);
+            return false;
+          }
         }
+        this.taddy.debug('Trying network:', network);
+        if (await providers[network](initData, config)) {
+          this.taddy.debug('[' + network + '] Success');
+          return true;
+        }
+      } catch (e) {
+        console.warn('[TaddySDK]', e);
       }
-    } catch (e) {
-      console.error('[Taddy]', e);
     }
     this.taddy.debug('Nothing to show');
     return false;
+  };
+
+  private taddyProvider = async (_: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
+    this.taddy.debug('<Taddy> getting ads...');
+    const loaded = await this.preload(EFormat.Interstitial);
+    if (!loaded) {
+      this.taddy.debug('<Taddy> no ads');
+      return false;
+    }
+    setTimeout(() => this.sendImpression(this.ads[EFormat.Interstitial]!), 1000);
+    return await showInterstitial(this.ads[EFormat.Interstitial]!, config, this.taddy).finally(() => {
+      delete this.ads[EFormat.Interstitial];
+    });
   };
 
   private teleadsProvider = async (initData: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
@@ -89,11 +92,11 @@ export class Ads {
       this.taddy.debug('Skipping TeleAds');
       return false;
     }
-    this.taddy.debug('[TeleAds]');
+    this.taddy.debug('<TeleAds> Processing...');
     return new Promise(async (resolve) => {
       try {
         if (!initData.teleAdsUnitId || !initData.teleAdsToken) {
-          this.taddy.debug('[TeleAds] not ready');
+          this.taddy.debug('<TeleAds> not ready');
           return resolve(false);
         }
         const user = window.Telegram.WebApp.initDataUnsafe.user!;
@@ -112,7 +115,7 @@ export class Ads {
         });
         const result = await response.json();
         if (!result.data) {
-          this.taddy.debug('[TeleAds] No ads');
+          this.taddy.debug('<TeleAds> No ads');
           return resolve(false);
         }
         await loadJs('https://assets.teleads.pro/sdk/taddy/index.js');
@@ -127,12 +130,12 @@ export class Ads {
           adUnitId: initData.teleAdsUnitId.toString(),
           onAdLoaded: () => (adLoaded = true),
         });
-        this.taddy.debug('[TeleAds] finished', adLoaded);
+        this.taddy.debug('<TeleAds> finished', adLoaded);
         if (adLoaded && config.onViewThrough) config.onViewThrough();
         if (config.onClosed) config.onClosed();
         resolve(adLoaded);
       } catch (error) {
-        console.error('[TeleAds]', error);
+        console.error('<TeleAds>', error);
         resolve(false);
       }
     });
@@ -143,7 +146,7 @@ export class Ads {
       this.taddy.debug('Skipping Playmatic');
       return false;
     }
-    this.taddy.debug('[Playmatic]');
+    this.taddy.debug('<Playmatic> Processing...');
     return window
       .fetch(
         `https://vast.ufouxbwn.com/vast.php?partner_id=7371124&format=4&set=6225881&referrer=${initData.apps[0] ?? 'app'}.${initData.username}`,
@@ -153,26 +156,26 @@ export class Ads {
         (xml) =>
           new Promise(async (resolve) => {
             if (xml.length <= 27) {
-              this.taddy.debug('[Playmatic]', 'Empty VAST');
+              this.taddy.debug('<Playmatic>', 'Empty VAST');
               return resolve(false);
             }
             const parser = new DOMParser();
             const doc = parser.parseFromString(xml, 'text/xml');
             const pricing = doc.getElementsByTagName('Pricing')[0];
             if (!pricing) {
-              this.taddy.debug('[Playmatic]', 'Empty pricing');
+              this.taddy.debug('<Playmatic>', 'Empty pricing');
               return resolve(false);
             }
             const model = pricing.getAttribute('model')?.toLowerCase(); // "CPM"
             const currency = pricing.getAttribute('currency'); // "USD"
             const cost = Number(pricing.textContent); // || 1.23; // "123.45"
             if (cost <= 0) {
-              this.taddy.debug('[Playmatic]', 'Empty cost');
+              this.taddy.debug('<Playmatic>', 'Empty cost');
               return resolve(false);
             }
             const creative = doc.getElementsByTagName('Creative')[0];
             if (!creative) {
-              this.taddy.debug('[Playmatic]', 'Empty creative');
+              this.taddy.debug('<Playmatic>', 'Empty creative');
               return resolve(false);
             }
             const ad = Number(creative.getAttribute('id'));
@@ -185,15 +188,15 @@ export class Ads {
             // @ts-ignore
             window.pmCallBack = (act: string) => {
               if (act === 'show mfs') {
-                this.taddy.debug('[Playmatic]', 'IMPRESSION');
+                this.taddy.debug('<Playmatic>', 'IMPRESSION');
                 this.sendImpression({ id: tag } as Ad);
               }
               if (act === 'click mfs') {
-                this.taddy.debug('[Playmatic]', 'CLICK');
+                this.taddy.debug('<Playmatic>', 'CLICK');
                 this.sendClick({ id: tag } as Ad);
               }
               if (act === 'stop mfs') {
-                this.taddy.debug('[Playmatic]', 'AD CLOSED');
+                this.taddy.debug('<Playmatic>', 'AD CLOSED');
                 if (config.onViewThrough) config.onViewThrough();
                 if (config.onClosed) config.onClosed();
                 return resolve(true);
