@@ -85,16 +85,19 @@ export class Ads {
       return false;
     }
     try {
-      this.taddy.debug('<Monetag> Attaching SDK...');
-      await loadJs(`https://${initData.monetagDomain}/sdk.js`, {
-        zone: initData.monetagZone.toString(),
-        sdk: 'show_monetag',
-      });
+      // @ts-ignore
+      if (typeof window.show_monetag === 'undefined') {
+        this.taddy.debug('<Monetag> Attaching SDK...');
+        await loadJs(`https://${initData.monetagDomain}/sdk.js`, {
+          zone: initData.monetagZone.toString(),
+          sdk: 'show_monetag',
+        });
+      }
       const ymid = await this.taddy.call<string>('/monetag/tag');
       this.taddy.debug('<Monetag> Preloading...');
       // @ts-ignore
       await show_monetag({ type: 'preload', ymid, requestVar: initData.username });
-      this.taddy.debug('<Monetag> Showing...');
+      this.taddy.debug('<Monetag> Showtime...');
       // @ts-ignore
       await show_monetag({ ymid, requestVar: initData.username });
       if (config.onViewThrough) config.onViewThrough();
@@ -132,7 +135,6 @@ export class Ads {
           return resolve(false);
         }
         const user = window.Telegram.WebApp.initDataUnsafe.user!;
-        // const response = await window.fetch('https://api.stage.teleads.pro/api/publish/sync', {
         const response = await window.fetch('https://api.teleads.pro/api/publish/sync', {
           method: 'POST',
           headers: {
@@ -147,15 +149,20 @@ export class Ads {
         });
         const result = await response.json();
         if (!result.data) {
-          this.taddy.debug('<TeleAds> No ads');
+          this.taddy.debug('<TeleAds> No ads :(');
           return resolve(false);
         }
-        await loadJs('https://assets.teleads.pro/sdk/taddy/index.js');
         // @ts-ignore
-        window.TeleAdsTMA.init({
-          debug: this.taddy.config.debug,
-          //endpointApi: 'https://api.stage.teleads.pro/api',
-        });
+        if (typeof window.TeleAdsTMA === 'undefined') {
+          this.taddy.debug('<TeleAds> Attaching SDK...');
+          await loadJs('https://assets.teleads.pro/sdk/taddy/index.js');
+          // @ts-ignore
+          window.TeleAdsTMA.init({
+            debug: this.taddy.config.debug,
+            //endpointApi: 'https://api.stage.teleads.pro/api',
+          });
+        }
+        this.taddy.debug('<TeleAds> Showtime...');
         let adLoaded = false;
         // @ts-ignore
         await window.TeleAdsTMA.showAd(result.data, {
@@ -234,7 +241,12 @@ export class Ads {
                 return resolve(true);
               }
             };
-            await loadJs('https://cdnwidget.simplejsmenu.com/dist/union/dev/pm.tg.vpaid.js');
+            // @ts-ignore
+            if (typeof window.PMTGVPAID === 'undefined') {
+              this.taddy.debug('<Playmatic> Attaching SDK...');
+              await loadJs('https://cdnwidget.simplejsmenu.com/dist/union/dev/pm.tg.vpaid.js');
+            }
+            this.taddy.debug('<Playmatic> Showtime...');
             // @ts-ignore
             window.PMTGVPAID.Mfs.start(xml);
           }),

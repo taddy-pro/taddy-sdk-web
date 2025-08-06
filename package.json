@@ -21,7 +21,7 @@
     "build:types": "tsc -p tsconfig.types.json",
     "build:js": "webpack",
     "prepublishOnly": "npm run build:types",
-    "deploy": "export $(cat .env | xargs) && npm run build:js && rsync -av --delete ./dist/js/ $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH && curl -X POST \"https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache\" -H \"Authorization: Bearer $CF_CLEAR_CACHE_TOKEN\" -H \"Content-Type: application/json\" --data '{\"hosts\":[\"sdk.taddy.pro\"]}'"
+    "deploy": "export $(cat .env | xargs) && npm run build:js && rsync -av --delete ./dist/js/ $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH && ./cf-purge.sh"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.26.3",
