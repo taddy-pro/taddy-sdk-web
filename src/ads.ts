@@ -52,6 +52,7 @@ export class Ads {
       [Network.Taddy]: this.taddyProvider,
       [Network.Playmatic]: this.playmaticProvider,
       [Network.TeleAds]: this.teleadsProvider,
+      [Network.Monetag]: this.monetagProvider,
     };
     for (const network of initData.networks) {
       try {
@@ -63,7 +64,7 @@ export class Ads {
         }
         this.taddy.debug('Trying network:', network);
         if (await providers[network](initData, config)) {
-          this.taddy.debug('[' + network + '] Success');
+          this.taddy.debug('<' + network + '> Success');
           return true;
         }
       } catch (e) {
@@ -72,6 +73,37 @@ export class Ads {
     }
     this.taddy.debug('Nothing to show');
     return false;
+  };
+
+  private monetagProvider = async (initData: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
+    if (this.taddy.config.disableMonetagProvider || !initData.monetag) {
+      this.taddy.debug('Skipping Monetag');
+      return false;
+    }
+    if (!initData.monetagZone) {
+      this.taddy.debug('<Monetag> not ready');
+      return false;
+    }
+    try {
+      this.taddy.debug('<Monetag> Attaching SDK...');
+      await loadJs(`https://${initData.monetagDomain}/sdk.js`, {
+        zone: initData.monetagZone.toString(),
+        sdk: 'show_monetag',
+      });
+      const ymid = await this.taddy.call<string>('/monetag/tag');
+      this.taddy.debug('<Monetag> Preloading...');
+      // @ts-ignore
+      await show_monetag({ type: 'preload', ymid, requestVar: initData.username });
+      this.taddy.debug('<Monetag> Showing...');
+      // @ts-ignore
+      await show_monetag({ ymid, requestVar: initData.username });
+      if (config.onViewThrough) config.onViewThrough();
+      if (config.onClosed) config.onClosed();
+      return true;
+    } catch (e) {
+      console.warn('[TaddySDK] <Monetag>', e);
+      return false;
+    }
   };
 
   private taddyProvider = async (_: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
@@ -149,7 +181,7 @@ export class Ads {
     this.taddy.debug('<Playmatic> Processing...');
     return window
       .fetch(
-        `https://vast.ufouxbwn.com/vast.php?partner_id=7371124&format=4&set=6225881&referrer=${initData.apps[0] ?? 'app'}.${initData.username}`,
+        `https://vast.ufouxbwn.com/vast.php?partner_id=7371124&format=4&set=6225881&referrer=app.${initData.username}`,
       )
       .then((res) => res.text())
       .then(

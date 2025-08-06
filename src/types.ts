@@ -38,6 +38,7 @@ export interface TaddyConfig {
   disableExternalProviders?: boolean;
   disablePlaymaticProvider?: boolean;
   disableTeleAdsProvider?: boolean;
+  disableMonetagProvider?: boolean;
 }
 
 export interface TelegramUser {

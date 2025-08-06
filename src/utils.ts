@@ -1,9 +1,15 @@
-export const loadJs = (src: string): Promise<void> => {
+export const loadJs = (src: string, data?: Record<string, string>): Promise<void> => {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = src;
     script.async = true;
+    if (data) {
+      Object.entries(data).forEach(([key, value]) => {
+        const attrName = key.startsWith('data-') ? key : `data-${key}`;
+        script.setAttribute(attrName, value);
+      });
+    }
     script.onload = () => resolve();
     script.onerror = reject;
     document.head.appendChild(script);

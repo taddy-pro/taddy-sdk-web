@@ -7,17 +7,20 @@ export enum Network {
   Taddy = 'taddy',
   Playmatic = 'playmatic',
   TeleAds = 'teleads',
+  Monetag = 'monetag',
 }
 
 export interface ResourceInitData {
   id: number;
   username: string;
-  apps: string[];
   externalAds: boolean;
   playmatic: boolean;
   teleAds: boolean;
-  teleAdsToken: string;
-  teleAdsUnitId: number;
+  teleAdsToken?: string;
+  teleAdsUnitId?: number;
+  monetag: boolean;
+  monetagZone?: number;
+  monetagDomain: string;
   networks: Network[];
 }
 
