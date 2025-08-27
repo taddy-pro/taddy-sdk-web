@@ -2,6 +2,8 @@ import { CustomEvent, TaddyConfig, TelegramUser, THeaders, THttpMethod, TRespons
 import { Ads } from './ads';
 import { Exchange } from './exchange';
 import { TADDY_VERSION } from './version';
+import { Telegram, WebApp } from 'telegram-web-app';
+import { loadJs } from './utils';
 
 export enum Network {
   Taddy = 'taddy',
@@ -49,9 +51,9 @@ export class TaddyWeb {
   private _user: Partial<TelegramUser> = {};
   private _resourceInitData?: ResourceInitData;
 
-  init(pubId: string, config?: TaddyConfig) {
+  async init(pubId: string, config?: TaddyConfig) {
     if (this.isInit) throw new Error('[TaddySDK] Already initialized');
-    if (!window.Telegram || !window.Telegram.WebApp) throw new Error('[TaddySDK] Telegram WebApp script is not loaded');
+    if (!window.Telegram || !window.Telegram.WebApp) throw new Error('[TaddySDK] Telegram WebApp SDK is not loaded');
     this.pubId = pubId;
     this.config = { ...defaultConfig, ...config };
     this.webApp = window.Telegram.WebApp;
@@ -59,6 +61,19 @@ export class TaddyWeb {
     this.user = this.initData.user;
     this.isInit = true;
     void this.getResourceInitData();
+
+    if (
+      !window.Telegram.WebApp.themeParams ||
+      !window.Telegram.WebApp.openLink ||
+      !window.Telegram.WebApp.openTelegramLink
+    ) {
+      console.warn(
+        '[Taddy]',
+        'Used truncated or outdated version of Telegram WebApp SDK. Including actual version. See https://core.telegram.org/bots/webapps#initializing-mini-apps',
+      );
+      void loadJs('https://telegram.org/js/telegram-web-app.js?59');
+    }
+
     // document.addEventListener('DOMContentLoaded', () => this.logEvent('dom-ready'), { once: true });
   }
 

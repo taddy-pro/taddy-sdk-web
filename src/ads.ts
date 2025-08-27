@@ -88,7 +88,7 @@ export class Ads {
       // @ts-ignore
       if (typeof window.show_monetag === 'undefined') {
         this.taddy.debug('<Monetag> Attaching SDK...');
-        await loadJs(`https://${initData.monetagDomain}/sdk.js`, {
+        await loadJs(`https://${initData.monetagDomain}/sdk.js?v2`, {
           zone: initData.monetagZone.toString(),
           sdk: 'show_monetag',
         });
@@ -155,7 +155,7 @@ export class Ads {
         // @ts-ignore
         if (typeof window.TeleAdsTMA === 'undefined') {
           this.taddy.debug('<TeleAds> Attaching SDK...');
-          await loadJs('https://assets.teleads.pro/sdk/taddy/index.js');
+          await loadJs('https://assets.teleads.pro/sdk/taddy/index.js?v2');
           // @ts-ignore
           window.TeleAdsTMA.init({
             debug: this.taddy.config.debug,
