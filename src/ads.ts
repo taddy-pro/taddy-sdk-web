@@ -48,6 +48,12 @@ export class Ads {
   public interstitial = async (config?: InterstitialConfig): Promise<boolean> => {
     config = { ...config, ...defaultInterstitialConfig };
     const initData = await this.taddy.getResourceInitData();
+
+    const viewThrough = (id: string) => {
+      void this.taddy.call('/ads/view-through', { id, payload: config.payload });
+      if (config.onViewThrough) config.onViewThrough(id);
+    };
+
     const providers: Record<Network, typeof this.taddyProvider> = {
       [Network.Taddy]: this.taddyProvider,
       [Network.Playmatic]: this.playmaticProvider,
@@ -63,7 +69,7 @@ export class Ads {
           }
         }
         this.taddy.debug('Trying network:', network);
-        if (await providers[network](initData, config)) {
+        if (await providers[network](initData, config, viewThrough)) {
           this.taddy.debug('<' + network + '> Success');
           return true;
         }
@@ -75,7 +81,11 @@ export class Ads {
     return false;
   };
 
-  private monetagProvider = async (initData: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
+  private monetagProvider = async (
+    initData: ResourceInitData,
+    config: InterstitialConfig,
+    viewThrough: (id: string) => void,
+  ): Promise<boolean> => {
     if (this.taddy.config.disableMonetagProvider || !initData.monetag) {
       this.taddy.debug('Skipping Monetag');
       return false;
@@ -100,7 +110,7 @@ export class Ads {
       this.taddy.debug('<Monetag> Showtime...');
       // @ts-ignore
       await show_monetag({ ymid, requestVar: initData.username });
-      if (config.onViewThrough) config.onViewThrough();
+      viewThrough(ymid);
       if (config.onClosed) config.onClosed();
       return true;
     } catch (e) {
@@ -109,7 +119,11 @@ export class Ads {
     }
   };
 
-  private taddyProvider = async (_: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
+  private taddyProvider = async (
+    _: ResourceInitData,
+    config: InterstitialConfig,
+    viewThrough: (id: string) => void,
+  ): Promise<boolean> => {
     this.taddy.debug('<Taddy> getting ads...');
     const loaded = await this.preload(EFormat.Interstitial);
     if (!loaded) {
@@ -117,12 +131,16 @@ export class Ads {
       return false;
     }
     setTimeout(() => this.sendImpression(this.ads[EFormat.Interstitial]!), 1000);
-    return await showInterstitial(this.ads[EFormat.Interstitial]!, config, this.taddy).finally(() => {
+    return await showInterstitial(this.ads[EFormat.Interstitial]!, config, viewThrough).finally(() => {
       delete this.ads[EFormat.Interstitial];
     });
   };
 
-  private teleadsProvider = async (initData: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
+  private teleadsProvider = async (
+    initData: ResourceInitData,
+    config: InterstitialConfig,
+    viewThrough: (id: string) => void,
+  ): Promise<boolean> => {
     if (this.taddy.config.disableTeleAdsProvider || !initData.teleAds) {
       this.taddy.debug('Skipping TeleAds');
       return false;
@@ -152,6 +170,7 @@ export class Ads {
           this.taddy.debug('<TeleAds> No ads :(');
           return resolve(false);
         }
+        const tag = await this.taddy.call<string>('/teleads/tag', { ad: result.data.id });
         // @ts-ignore
         if (typeof window.TeleAdsTMA === 'undefined') {
           this.taddy.debug('<TeleAds> Attaching SDK...');
@@ -170,7 +189,7 @@ export class Ads {
           onAdLoaded: () => (adLoaded = true),
         });
         this.taddy.debug('<TeleAds> finished', adLoaded);
-        if (adLoaded && config.onViewThrough) config.onViewThrough();
+        if (adLoaded) viewThrough(tag);
         if (config.onClosed) config.onClosed();
         resolve(adLoaded);
       } catch (error) {
@@ -180,7 +199,11 @@ export class Ads {
     });
   };
 
-  private playmaticProvider = async (initData: ResourceInitData, config: InterstitialConfig): Promise<boolean> => {
+  private playmaticProvider = async (
+    initData: ResourceInitData,
+    config: InterstitialConfig,
+    viewThrough: (id: string) => void,
+  ): Promise<boolean> => {
     if (this.taddy.config.disablePlaymaticProvider || !initData.playmatic) {
       this.taddy.debug('Skipping Playmatic');
       return false;
@@ -236,7 +259,7 @@ export class Ads {
               }
               if (act === 'stop mfs') {
                 this.taddy.debug('<Playmatic>', 'AD CLOSED');
-                if (config.onViewThrough) config.onViewThrough();
+                viewThrough(tag);
                 if (config.onClosed) config.onClosed();
                 return resolve(true);
               }

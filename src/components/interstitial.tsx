@@ -4,8 +4,6 @@ import InterstitialImage from './interstitial-image';
 import InterstitialVideo from './interstitial-video';
 import './interstitial.scss';
 
-import { TaddyWeb } from '../taddy';
-
 interface Props {
   ad: Ad;
   click(): void;
@@ -22,7 +20,11 @@ export const Interstitial = ({ ad, click, close, viewThrough }: Props) => {
   );
 };
 
-export const showInterstitial = (ad: Ad, config: InterstitialConfig, taddy: TaddyWeb): Promise<boolean> => {
+export const showInterstitial = (
+  ad: Ad,
+  config: InterstitialConfig,
+  viewThrough: (id: string) => void,
+): Promise<boolean> => {
   return new Promise((resolve) => {
     const div = document.createElement('div');
     document.getElementsByTagName('body')[0].appendChild(div);
@@ -31,17 +33,10 @@ export const showInterstitial = (ad: Ad, config: InterstitialConfig, taddy: Tadd
       if (config.onClosed) config.onClosed();
       resolve(true);
     };
-    let isViewThrough = false;
-    const viewThrough = () => {
-      if (isViewThrough) return;
-      isViewThrough = true;
-      void taddy.call('/ads/view-through', { id: ad.id });
-      if (config.onViewThrough) config.onViewThrough(ad.id);
-    };
     const click = () => {
-      window.Telegram.WebApp.openLink(ad.link);
-      // window.Telegram.WebApp.openLink(ad.link, { try_instant_view: false });
+      // window.Telegram.WebApp.openLink(ad.link);
+      window.Telegram.WebApp.openLink(ad.link, { try_instant_view: false });
     };
-    createRoot(div).render(<Interstitial ad={ad} click={click} close={close} viewThrough={viewThrough} />);
+    createRoot(div).render(<Interstitial ad={ad} click={click} close={close} viewThrough={() => viewThrough(ad.id)} />);
   });
 };

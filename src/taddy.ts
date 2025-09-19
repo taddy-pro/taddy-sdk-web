@@ -28,7 +28,7 @@ export interface ResourceInitData {
 
 const defaultConfig: Partial<TaddyConfig> = {
   debug: false,
-  apiUrl: 'https://t.tadly.pro/v1',
+  apiUrl: 'https://a.tadly.pro/v1',
 };
 
 declare global {

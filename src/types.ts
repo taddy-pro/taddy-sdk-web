@@ -20,9 +20,13 @@ export interface FeedItem {
   title: string;
   description: string;
   image: string;
-  type: 'bot' | 'app';
+  fullImage: string;
+  type: 'bot' | 'app' | 'link';
   link: string;
-  status: 'new' | 'pending' | 'completed' | 'claimed' | 'unknown';
+  price: number | null;
+  status: 'new' | 'pending' | 'completed';
+  createdAt: string;
+  expiresAt: string;
 }
 
 export interface ExchangeFeedOptions {
@@ -30,6 +34,7 @@ export interface ExchangeFeedOptions {
   imageFormat?: 'png' | 'jpg' | 'webp';
   autoImpressions?: boolean;
   showCompleted?: boolean;
+  params?: Record<string, any>;
 }
 
 export interface TaddyConfig {
@@ -66,6 +71,7 @@ export interface Ad {
 }
 
 export interface InterstitialConfig {
+  payload?: any;
   onClosed?(): void;
   onViewThrough?(id?: string): void;
 }
