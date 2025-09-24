@@ -1,1 +1,1 @@
-export const TADDY_VERSION = '1.3.12';
+export const TADDY_VERSION = '1.3.13';

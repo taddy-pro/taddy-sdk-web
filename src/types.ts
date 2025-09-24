@@ -73,7 +73,7 @@ export interface Ad {
 export interface InterstitialConfig {
   payload?: any;
   onClosed?(): void;
-  onViewThrough?(id?: string): void;
+  onViewThrough?(id: string): void;
 }
 
 export enum EFormat {

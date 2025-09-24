@@ -52,16 +52,21 @@ export class TaddyWeb {
   private _resourceInitData?: ResourceInitData;
 
   async init(pubId: string, config?: TaddyConfig) {
-    if (this.isInit) throw new Error('[TaddySDK] Already initialized');
-    if (!window.Telegram || !window.Telegram.WebApp) throw new Error('[TaddySDK] Telegram WebApp SDK is not loaded');
+    if (this.isInit) {
+      console.error('[TaddySDK]', 'Already initialized');
+      return;
+    }
+    if (!window.Telegram || !window.Telegram.WebApp) {
+      console.error('[TaddySDK]', 'Telegram WebApp SDK is not loaded');
+      return;
+    }
     this.pubId = pubId;
     this.config = { ...defaultConfig, ...config };
     this.webApp = window.Telegram.WebApp;
     this.initData = this.webApp.initDataUnsafe;
     this.user = this.initData.user;
     this.isInit = true;
-    void this.getResourceInitData();
-
+    await this.getResourceInitData();
     if (
       !window.Telegram.WebApp.themeParams ||
       !window.Telegram.WebApp.openLink ||
@@ -71,7 +76,7 @@ export class TaddyWeb {
         '[Taddy]',
         'Used truncated or outdated version of Telegram WebApp SDK. Including actual version. See https://core.telegram.org/bots/webapps#initializing-mini-apps',
       );
-      void loadJs('https://telegram.org/js/telegram-web-app.js?59');
+      await loadJs('https://telegram.org/js/telegram-web-app.js?59');
     }
 
     // document.addEventListener('DOMContentLoaded', () => this.logEvent('dom-ready'), { once: true });
@@ -101,18 +106,23 @@ export class TaddyWeb {
   };
 
   public checkInit = () => {
-    if (!this.isInit) throw new Error('[Taddy] Not initialized. Call window.Taddy.init(pubId, config)');
+    if (!this.isInit) throw new Error('Not initialized. Call window.Taddy.init(pubId, config)');
   };
 
-  public ready = (user?: Partial<TelegramUser>): void => {
-    this.checkInit();
-    this._user = { ...this._user, ...user };
-    if (!this.isReady) {
-      this.call('/events/start', { start: this.initData?.start_param, url: window.location.href }).then();
-      this.isReady = true;
-      return;
+  public ready = async (user?: Partial<TelegramUser>): Promise<void> => {
+    try {
+      this.checkInit();
+      this._user = { ...this._user, ...user };
+      if (this.isReady) {
+        console.warn('[TaddySDK] ready() already called');
+      } else {
+        this.isReady = true;
+        await this.call('/events/start', { start: this.initData?.start_param, url: window.location.href });
+        return;
+      }
+    } catch (e) {
+      console.error('[TaddySDK]', e);
     }
-    console.warn('[TaddySDK] ready() already called');
   };
 
   public customEvent = async (
@@ -120,8 +130,8 @@ export class TaddyWeb {
     options?: { value?: number | null; currency?: string; once?: boolean; payload?: Record<string, any> },
   ) => {
     this.debug(`Sending "${event}" event`, options);
-    this.checkInit();
     try {
+      this.checkInit();
       return await this.call<void>('/events/custom', {
         event,
         payload: options?.payload,
@@ -130,7 +140,7 @@ export class TaddyWeb {
         once: options?.once,
       });
     } catch (e) {
-      console.warn('[TaddySDK]', e);
+      console.error('[TaddySDK]', e);
     }
   };
 
