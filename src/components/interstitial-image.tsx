@@ -6,11 +6,13 @@ const InterstitialImage = ({
   ad,
   click,
   close,
+  impression,
   viewThrough,
 }: {
   ad: Ad;
   click(): void;
   close(): void;
+  impression(): void;
   viewThrough(): void;
 }) => {
   const [time, setTime] = useState(15);
@@ -20,6 +22,9 @@ const InterstitialImage = ({
     const t = time - 1;
     if (t === 5) {
       viewThrough();
+    }
+    if (t === 14) {
+      impression();
     }
     if (t >= 0) {
       setTime(t);

@@ -6,11 +6,15 @@ const InterstitialVideo = ({
   ad,
   click,
   close,
+  error,
+  impression,
   viewThrough,
 }: {
   ad: Ad;
   click(): void;
   close(): void;
+  error(e: any): void;
+  impression(): void;
   viewThrough(): void;
 }) => {
   const [muted, setMuted] = useState(true);
@@ -18,8 +22,14 @@ const InterstitialVideo = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const [canClose, setCanClose] = useState(false);
-
+  const [impressionSent, setImpressionSent] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const sendImpression = useCallback(() => {
+    if (impressionSent) return;
+    impression();
+    setImpressionSent(true);
+  }, [impressionSent, setImpressionSent]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -76,6 +86,9 @@ const InterstitialVideo = ({
         autoPlay
         ref={videoRef}
         onClick={videoClick}
+        onLoad={() => console.log('Loaded')}
+        onPlay={sendImpression}
+        onError={() => error('Failed to load/play video')}
       />
 
       <div className="taddy__interstitial__video__head">

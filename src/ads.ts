@@ -130,8 +130,14 @@ export class Ads {
       this.taddy.debug('<Taddy> no ads');
       return false;
     }
-    setTimeout(() => this.sendImpression(this.ads[EFormat.Interstitial]!), 1000);
-    return await showInterstitial(this.ads[EFormat.Interstitial]!, config, viewThrough).finally(() => {
+    return await showInterstitial(
+      this.ads[EFormat.Interstitial]!,
+      config,
+      () => {
+        this.sendImpression(this.ads[EFormat.Interstitial]!);
+      },
+      viewThrough,
+    ).finally(() => {
       delete this.ads[EFormat.Interstitial];
     });
   };
