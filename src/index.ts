@@ -22,8 +22,9 @@ if (data?.pubId) {
     debug: data.debug === 'true',
     disableExternalProviders: disableProviders.includes('external'),
     disablePlaymaticProvider: disableProviders.includes('playmatic'),
-    disableMonetagProvider: disableProviders.includes('monetag'),
     disableTeleAdsProvider: disableProviders.includes('teleads'),
+    disableMonetagProvider: disableProviders.includes('monetag'),
+    disableNygmaProvider: disableProviders.includes('nygma'),
   });
-  Taddy.ready();
+  void Taddy.ready();
 }

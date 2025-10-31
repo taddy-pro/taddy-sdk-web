@@ -59,6 +59,7 @@ export class Ads {
       [Network.Playmatic]: this.playmaticProvider,
       [Network.TeleAds]: this.teleadsProvider,
       [Network.Monetag]: this.monetagProvider,
+      [Network.Nygma]: this.nygmaProvider,
     };
     for (const network of initData.networks) {
       try {
@@ -115,6 +116,41 @@ export class Ads {
       return true;
     } catch (e) {
       console.warn('[TaddySDK] <Monetag>', e);
+      return false;
+    }
+  };
+
+  private nygmaProvider = async (
+    initData: ResourceInitData,
+    config: InterstitialConfig,
+    viewThrough: (id: string) => void,
+  ): Promise<boolean> => {
+    if (this.taddy.config.disableNygmaProvider || !initData.nygmaBlockId) {
+      this.taddy.debug('Skipping Nygma');
+      return false;
+    }
+    try {
+      // @ts-ignore
+      if (typeof window.NigmaSDK === 'undefined') {
+        this.taddy.debug('<Nygma> Attaching SDK...');
+        await loadJs(`https://static.nigma.smbadmin.tech/sdk/index.min.js`);
+      }
+      // @ts-ignore
+      const NygmaController = window.NigmaSDK.init({ blockId: initData.nygmaBlockId });
+      this.taddy.debug('<Nygma> Showtime...');
+      // @ts-ignore
+      const res = await NygmaController.showAd();
+      if (!res.cost) res.cost = 1.7;
+      this.taddy.debug('<Nygma> Result', res);
+      if (!res.error && res.cost) {
+        const id = await this.taddy.call<string>('/nygma/tag', { cost: res.cost });
+        void this.taddy.call('/ads/impressions', { id });
+        viewThrough(id);
+      }
+      if (config.onClosed) config.onClosed();
+      return true;
+    } catch (e) {
+      console.warn('[TaddySDK] <Nygma>', e);
       return false;
     }
   };

@@ -44,6 +44,7 @@ export interface TaddyConfig {
   disablePlaymaticProvider?: boolean;
   disableTeleAdsProvider?: boolean;
   disableMonetagProvider?: boolean;
+  disableNygmaProvider?: boolean;
 }
 
 export interface TelegramUser {

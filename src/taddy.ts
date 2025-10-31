@@ -10,6 +10,7 @@ export enum Network {
   Playmatic = 'playmatic',
   TeleAds = 'teleads',
   Monetag = 'monetag',
+  Nygma = 'nygma',
 }
 
 export interface ResourceInitData {
@@ -23,6 +24,7 @@ export interface ResourceInitData {
   monetag: boolean;
   monetagZone?: number;
   monetagDomain: string;
+  nygmaBlockId?: string;
   networks: Network[];
 }
 
