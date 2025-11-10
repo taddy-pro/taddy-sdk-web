@@ -133,19 +133,18 @@ export class Ads {
       // @ts-ignore
       if (typeof window.NigmaSDK === 'undefined') {
         this.taddy.debug('<Nygma> Attaching SDK...');
-        await loadJs(`https://static.nigma.smbadmin.tech/sdk/index.min.js`);
+        await loadJs(`https://static.nigma.smbadmin.tech/sdk/index.min.js?3`);
       }
+      const tag = await this.taddy.call<string>('/nygma/tag');
       // @ts-ignore
-      const NygmaController = window.NigmaSDK.init({ blockId: initData.nygmaBlockId });
+      const NygmaController = window.NigmaSDK.init({ blockId: initData.nygmaBlockId, tag });
       this.taddy.debug('<Nygma> Showtime...');
       // @ts-ignore
       const res = await NygmaController.showAd();
-      if (!res.cost) res.cost = 1.7;
       this.taddy.debug('<Nygma> Result', res);
-      if (!res.error && res.cost) {
-        const id = await this.taddy.call<string>('/nygma/tag', { cost: res.cost });
-        void this.taddy.call('/ads/impressions', { id });
-        viewThrough(id);
+      if (!res.error) {
+        // void this.taddy.call('/ads/impressions', { id });
+        viewThrough(tag);
       }
       if (config.onClosed) config.onClosed();
       return true;

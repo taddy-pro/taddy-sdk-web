@@ -68,7 +68,11 @@ export class TaddyWeb {
     this.initData = this.webApp.initDataUnsafe;
     this.user = this.initData.user;
     this.isInit = true;
-    await this.getResourceInitData();
+    try {
+      await this.getResourceInitData();
+    } catch (e) {
+      console.error('[Taddy]', 'Failed to init ads', e);
+    }
     if (
       !window.Telegram.WebApp.themeParams ||
       !window.Telegram.WebApp.openLink ||
@@ -81,7 +85,7 @@ export class TaddyWeb {
       await loadJs('https://telegram.org/js/telegram-web-app.js?59');
     }
 
-    // document.addEventListener('DOMContentLoaded', () => this.logEvent('dom-ready'), { once: true });
+    document.addEventListener('DOMContentLoaded', () => this.ready());
   }
 
   public getResourceInitData = (): Promise<ResourceInitData> => {
