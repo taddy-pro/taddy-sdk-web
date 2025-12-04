@@ -13,12 +13,12 @@ export class Ads {
     this.taddy = taddy;
   }
 
-  public preload = (format: EFormat | string): Promise<boolean> => {
+  public preload = (format: EFormat | string, payload?: any): Promise<boolean> => {
     if (format === 'interstitial') format = EFormat.Interstitial;
     return new Promise((resolve, reject) => {
       if (this.ads[format as EFormat]) return resolve(true);
       this.taddy
-        .call<Ad | null>('/ads/get', { format })
+        .call<Ad | null>('/ads/get', { format, payload })
         .then((ad) => {
           if (ad) {
             this.ads[format as EFormat] = ad;
@@ -104,7 +104,7 @@ export class Ads {
           sdk: 'show_monetag',
         });
       }
-      const ymid = await this.taddy.call<string>('/monetag/tag');
+      const ymid = await this.taddy.call<string>('/monetag/tag', { payload: config.payload });
       this.taddy.debug('<Monetag> Preloading...');
       // @ts-ignore
       await show_monetag({ type: 'preload', ymid, requestVar: initData.username });
@@ -135,7 +135,7 @@ export class Ads {
         this.taddy.debug('<Nygma> Attaching SDK...');
         await loadJs(`https://static.nigma.smbadmin.tech/sdk/index.min.js?3`);
       }
-      const tag = await this.taddy.call<string>('/nygma/tag');
+      const tag = await this.taddy.call<string>('/nygma/tag', { payload: config.payload });
       // @ts-ignore
       const NygmaController = window.NigmaSDK.init({ blockId: initData.nygmaBlockId, tag });
       this.taddy.debug('<Nygma> Showtime...');
@@ -160,7 +160,7 @@ export class Ads {
     viewThrough: (id: string) => void,
   ): Promise<boolean> => {
     this.taddy.debug('<Taddy> getting ads...');
-    const loaded = await this.preload(EFormat.Interstitial);
+    const loaded = await this.preload(EFormat.Interstitial, config.payload);
     if (!loaded) {
       this.taddy.debug('<Taddy> no ads');
       return false;
@@ -211,7 +211,7 @@ export class Ads {
           this.taddy.debug('<TeleAds> No ads :(');
           return resolve(false);
         }
-        const tag = await this.taddy.call<string>('/teleads/tag', { ad: result.data.id });
+        const tag = await this.taddy.call<string>('/teleads/tag', { ad: result.data.id, payload: config.payload });
         // @ts-ignore
         if (typeof window.TeleAdsTMA === 'undefined') {
           this.taddy.debug('<TeleAds> Attaching SDK...');
@@ -287,6 +287,7 @@ export class Ads {
               currency,
               cost,
               ad,
+              payload: config.payload
             });
             // @ts-ignore
             window.pmCallBack = (act: string) => {
