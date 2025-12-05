@@ -146,6 +146,8 @@ export class Ads {
         // void this.taddy.call('/ads/impressions', { id });
         viewThrough(tag);
       }
+      // @ts-ignore
+      window.NigmaSDK.destroy({ blockId: initData.nygmaBlockId });
       if (config.onClosed) config.onClosed();
       return true;
     } catch (e) {
