@@ -35,6 +35,10 @@ const InterstitialVideo = ({
     const video = videoRef.current;
     if (!video) return;
 
+    setTimeout(() => {
+      if (!video.currentTime) error('Video not started after 3000ms');
+    }, 3000);
+
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
     };
