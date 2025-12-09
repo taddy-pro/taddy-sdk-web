@@ -30,7 +30,7 @@ export interface ResourceInitData {
 
 const defaultConfig: Partial<TaddyConfig> = {
   debug: false,
-  apiUrl: 'https://a.tadly.pro/v1',
+  apiUrl: 'https://api.taddy.pro/v1',
 };
 
 declare global {
