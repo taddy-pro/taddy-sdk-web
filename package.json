@@ -39,9 +39,9 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "@types/telegram-web-app": "latest",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
-    "preact": "^10.26.9"
+    "@types/telegram-web-app": "latest",
+    "preact": "^10.28.3"
   }
 }
